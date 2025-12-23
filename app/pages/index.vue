@@ -9,32 +9,38 @@ const backendStatus = ref<null | {
 const error = ref<string | null>(null)
 const procoreContext = ref<any>(null)
 
-onMounted(async () => {
-  try {
-    const res = await fetch(
-      'https://signiflow-backend-test.onrender.com/api/auth/status'
-    )
+onMounted(() => {
+  // 1️⃣ Load backend auth status (fire-and-forget)
+  fetch('https://signiflow-backend-test.onrender.com/api/auth/status')
+    .then(res => {
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      return res.json()
+    })
+    .then(data => {
+      backendStatus.value = data
+    })
+    .catch(err => {
+      error.value = err.message ?? 'Failed to load backend status'
+    })
 
-    if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`)
+  // 2️⃣ Wait for Procore SDK
+  const waitForProcore = () => {
+    if (window.Procore && typeof window.Procore.on === 'function') {
+      console.log('Procore SDK available')
+
+      window.Procore.on('app.context', (context: any) => {
+        console.log('Procore context received:', context)
+        procoreContext.value = context
+      })
+    } else {
+      // Retry until SDK is injected
+      setTimeout(waitForProcore, 100)
     }
-
-    backendStatus.value = await res.json()
-  } catch (err: any) {
-    error.value = err.message ?? 'Failed to load backend status'
   }
 
-  if (!window.Procore) {
-    error.value = 'Procore SDK not available'
-    return
-  }
-
-  // Listen for context updates
-  window.Procore.on('app.context', (context: any) => {
-    console.log('Procore context received:', context)
-    procoreContext.value = context
-  })
+  waitForProcore()
 })
+
 </script>
 
 <template>
