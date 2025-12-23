@@ -1,44 +1,51 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-const queryParams = ref<Record<string, string>>({})
-const procoreContext = ref<any>(null)
+const backendStatus = ref<null | {
+  authenticated: boolean
+  expiresAt: number | null
+}>(null)
 
-onMounted(() => {
-  // 1. Read query params (always available)
-  const params = new URLSearchParams(window.location.search)
-  const entries: Record<string, string> = {}
+const error = ref<string | null>(null)
 
-  for (const [key, value] of params.entries()) {
-    entries[key] = value
-  }
+onMounted(async () => {
+  try {
+    const res = await fetch(
+      'https://signiflow-backend-test.onrender.com/api/auth/status'
+    )
 
-  queryParams.value = entries
-
-  // 2. Listen for Procore context
-  const waitForProcore = () => {
-    if (window.Procore?.on) {
-      window.Procore.on('app.context', (context: any) => {
-        procoreContext.value = context
-      })
-    } else {
-      setTimeout(waitForProcore, 100)
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`)
     }
-  }
 
-  waitForProcore()
+    backendStatus.value = await res.json()
+  } catch (err: any) {
+    error.value = err.message ?? 'Failed to load backend status'
+  }
 })
 </script>
 
 <template>
   <main style="padding: 1rem; font-family: system-ui;">
-    <h1>Procore Side Panel (Nuxt 4)</h1>
+    <h1>Signiflow – Procore Side Panel</h1>
 
-    <h2>Query Parameters</h2>
-    <pre>{{ queryParams }}</pre>
+    <section>
+      <h2>Backend Auth Status</h2>
 
-    <h2>Procore Context</h2>
-    <pre v-if="procoreContext">{{ procoreContext }}</pre>
-    <p v-else>Waiting for Procore context…</p>
+      <p v-if="error" style="color: red;">
+        {{ error }}
+      </p>
+
+      <pre v-else-if="backendStatus">
+{{ backendStatus }}
+      </pre>
+
+      <p v-else>Loading…</p>
+    </section>
+
+    <section style="margin-top: 2rem;">
+      <h2>Procore Context</h2>
+      <p>(Not wired yet)</p>
+    </section>
   </main>
 </template>
