@@ -10,30 +10,33 @@ const error = ref<string | null>(null)
 const procoreContext = ref<any>(null)
 
 onMounted(() => {
-  // 1️⃣ Load backend auth status (fire-and-forget)
+  // --- Backend auth (independent) ---
   fetch('https://signiflow-backend-test.onrender.com/api/auth/status')
-    .then(res => {
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      return res.json()
-    })
+    .then(res => res.json())
     .then(data => {
       backendStatus.value = data
     })
-    .catch(err => {
-      error.value = err.message ?? 'Failed to load backend status'
+    .catch(() => {
+      error.value = 'Failed to load backend status'
     })
 
-  // 2️⃣ Wait for Procore SDK
+  // --- Procore context wiring ---
   const waitForProcore = () => {
-    if (window.Procore && typeof window.Procore.on === 'function') {
-      console.log('Procore SDK available')
+    if (
+      window.Procore &&
+      typeof window.Procore.ready === 'function'
+    ) {
+      console.log('Procore SDK ready')
 
+      // 🔑 Tell Procore we are ready
+      window.Procore.ready()
+
+      // 🔑 Subscribe AFTER ready
       window.Procore.on('app.context', (context: any) => {
         console.log('Procore context received:', context)
         procoreContext.value = context
       })
     } else {
-      // Retry until SDK is injected
       setTimeout(waitForProcore, 100)
     }
   }
