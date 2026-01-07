@@ -65,6 +65,10 @@ onMounted(() => {
 
   // Procore context listener
   window.addEventListener('message', (event) => {
+    if (event.source === window.self) {
+      console.log('⛔ Ignoring self-sent message')
+      return
+    }
     console.group('📨 postMessage received')
     console.log('origin:', event.origin)
     console.log('source === window.parent:', event.source === window.parent)
@@ -79,20 +83,41 @@ onMounted(() => {
       procoreContext.value = event.data.context ?? event.data.payload ?? event.data
     }
   })
-  requestProcoreContext()
   console.log('--- message listener attached ---')
+
+  startContextPolling()
 })
 
 /* -----------------------------
    Actions
 ----------------------------- */
-function requestProcoreContext() {
-  console.log('📤 Requesting Procore context')
+let contextAttempts = 0
+const MAX_ATTEMPTS = 10
 
-  window.parent.postMessage(
-    { type: 'get-context' },
-    '*'
-  )
+function startContextPolling() {
+  console.log('▶️ Starting Procore context polling')
+
+  const interval = setInterval(() => {
+    if (procoreContext.value) {
+      console.log('🛑 Context received, stopping polling')
+      clearInterval(interval)
+      return
+    }
+
+    if (contextAttempts >= MAX_ATTEMPTS) {
+      console.warn('⚠️ Procore context not received after max attempts')
+      clearInterval(interval)
+      return
+    }
+
+    contextAttempts++
+    console.log(`📤 Requesting Procore context (attempt ${contextAttempts})`)
+
+    window.parent.postMessage(
+      { type: 'get-context' },
+      '*'
+    )
+  }, 500)
 }
 
 async function sendToBackend() {
