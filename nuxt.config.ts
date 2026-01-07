@@ -7,7 +7,7 @@ export default defineNuxtConfig({
       include: ['types/**/*.d.ts']
     },
   },
-  plugins: [
-    './plugins/procore.client.ts'
-  ],
+  // plugins: [
+  //   './plugins/procore.client.ts'
+  // ],
 })

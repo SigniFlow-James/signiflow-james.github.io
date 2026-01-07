@@ -65,12 +65,7 @@ onMounted(() => {
     })
 
   // Procore context listener
-  window.addEventListener('procore-message', (msg) => {
-    const e = msg as CustomEvent<{
-      detail: MessageEvent
-    }>
-    const event = e.detail.detail
-    
+  window.addEventListener('message', (event) => {
     if (event.source === window.self) {
       console.log('⛔ Ignoring self-sent message')
       return
@@ -90,6 +85,11 @@ onMounted(() => {
     }
   })
   console.log('--- message listener attached ---')
+  console.log(`--- sending initialiser to ${document.referrer} ---`)
+  window.parent.postMessage(
+    { type: 'initialize' },
+    document.referrer
+  )
 })
 
 /* -----------------------------
@@ -139,36 +139,21 @@ async function sendToBackend() {
     <section style="margin-top: 1rem;">
       <label>
         Name<br />
-        <input
-          v-model="form.name"
-          type="text"
-          style="width: 100%;"
-        />
+        <input v-model="form.name" type="text" style="width: 100%;" />
       </label>
 
       <label>
         Email<br />
-        <input
-          v-model="form.email"
-          type="text"
-          style="width: 100%;"
-        />
+        <input v-model="form.email" type="text" style="width: 100%;" />
       </label>
 
       <label style="display: block; margin-top: 1rem;">
         Custom Message<br />
-        <textarea
-          v-model="form.customMessage"
-          rows="4"
-          style="width: 100%;"
-        />
+        <textarea v-model="form.customMessage" rows="4" style="width: 100%;" />
       </label>
 
-      <button
-        style="margin-top: 1rem;"
-        :disabled="!isAuthenticated || !procoreContext || sending"
-        @click="sendToBackend"
-      >
+      <button style="margin-top: 1rem;" :disabled="!isAuthenticated || !procoreContext || sending"
+        @click="sendToBackend">
         {{ sending ? 'Sending…' : 'Send' }}
       </button>
 
