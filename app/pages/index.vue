@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 
+/* -----------------------------
+   State
+----------------------------- */
 const backendStatus = ref<null | {
   authenticated: boolean
   expiresAt: number | null
@@ -9,23 +12,43 @@ const backendStatus = ref<null | {
 const error = ref<string | null>(null)
 const procoreContext = ref<any>(null)
 
+/* UI state */
+const debugEnabled = ref(false)
+const sending = ref(false)
+const sendResult = ref<string | null>(null)
+
+/* Example form fields */
+const form = ref({
+  name: '',
+  email: '',
+  customMessage: ''
+})
+
+/* Derived helpers */
+const isAuthenticated = computed(
+  () => backendStatus.value?.authenticated === true
+)
+
+/* -----------------------------
+   Lifecycle
+----------------------------- */
 onMounted(() => {
   console.log('--- Signiflow side panel mounted ---')
 
-  // 1️⃣ Environment diagnostics
+  // Environment diagnostics
   console.log('window.location.href:', window.location.href)
   console.log('window.self === window.top:', window.self === window.top)
 
   try {
     console.log('window.parent.location:', window.parent.location.href)
-  } catch (e) {
+  } catch {
     console.log('window.parent.location: [blocked by browser]')
   }
 
   console.log('window.Procore exists:', Boolean((window as any).Procore))
   console.log('window.Procore value:', (window as any).Procore)
 
-  // 2️⃣ Backend auth check (just to confirm nothing blocks execution)
+  // Backend auth status
   fetch('https://signiflow-backend-test.onrender.com/api/auth/status')
     .then(res => {
       console.log('auth/status response:', res.status)
@@ -37,9 +60,10 @@ onMounted(() => {
     })
     .catch(err => {
       console.error('auth/status error:', err)
+      error.value = 'Failed to reach backend'
     })
 
-  // 3️⃣ Global message listener (VERY IMPORTANT)
+  // Procore context listener
   window.addEventListener('message', (event) => {
     console.group('📨 postMessage received')
     console.log('origin:', event.origin)
@@ -47,65 +71,117 @@ onMounted(() => {
     console.log('raw data:', event.data)
     console.groupEnd()
 
-    // Capture EVERYTHING for now
-    try {
-      if (typeof event.data === 'string') {
-        // Sometimes JSON comes through as string
-        const parsed = JSON.parse(event.data)
-        console.log('parsed string data:', parsed)
-      }
-    } catch (_) {}
-
-    // Try common Procore patterns
-    if (event.data?.type) {
-      console.log('message type:', event.data.type)
-    }
-
-    if (event.data?.payload) {
-      console.log('message payload:', event.data.payload)
-    }
-
-    // Tentative context capture
     if (
-      event.data?.type === 'app.context' ||
-      event.data?.type === 'context'
+      event.data?.type === 'context' ||
+      event.data?.type === 'app.context'
     ) {
       console.log('✅ Procore context detected')
-      procoreContext.value = event.data.payload ?? event.data
+      procoreContext.value = event.data.context ?? event.data.payload ?? event.data
     }
   })
 
   console.log('--- message listener attached ---')
 })
 
+/* -----------------------------
+   Actions
+----------------------------- */
+async function sendToBackend() {
+  sendResult.value = null
+  sending.value = true
+
+  try {
+    const res = await fetch(
+      'https://signiflow-backend-test.onrender.com/api/demo/send',
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          form: form.value,
+          context: procoreContext.value
+        })
+      }
+    )
+
+    if (!res.ok) {
+      throw new Error(`HTTP ${res.status}`)
+    }
+
+    sendResult.value = 'Sent successfully'
+  } catch (err: any) {
+    sendResult.value = err.message ?? 'Send failed'
+  } finally {
+    sending.value = false
+  }
+}
 </script>
 
 <template>
   <main style="padding: 1rem; font-family: system-ui;">
-    <h1>Signiflow – Procore Side Panel</h1>
+    <img src="/logo.png" alt="">
+    <h2>Send contract to recipient via Signiflow.</h2>
+    <!-- Error -->
     <p v-if="error" style="color: red;">
-        {{ error }}
+      {{ error }}
+    </p>
+
+    <!-- Main demo UI -->
+    <section style="margin-top: 1rem;">
+      <label>
+        Name<br />
+        <input
+          v-model="form.name"
+          type="text"
+          style="width: 100%;"
+        />
+      </label>
+
+      <label>
+        Email<br />
+        <input
+          v-model="form.email"
+          type="text"
+          style="width: 100%;"
+        />
+      </label>
+
+      <label style="display: block; margin-top: 1rem;">
+        Custom Message<br />
+        <textarea
+          v-model="form.customMessage"
+          rows="4"
+          style="width: 100%;"
+        />
+      </label>
+
+      <button
+        style="margin-top: 1rem;"
+        :disabled="!isAuthenticated || !procoreContext || sending"
+        @click="sendToBackend"
+      >
+        {{ sending ? 'Sending…' : 'Send' }}
+      </button>
+
+      <p v-if="sendResult" style="margin-top: 0.5rem;">
+        {{ sendResult }}
       </p>
-
-    <section>
-      <h2>Backend Auth Status</h2>
-      <pre v-if="backendStatus">
-{{ backendStatus }}
-      </pre>
-
-      <p v-else>Loading…</p>
     </section>
 
+    <!-- Debug toggle -->
     <section style="margin-top: 2rem;">
-      <h2>Procore Context</h2>
+      <label>
+        <input type="checkbox" v-model="debugEnabled" />
+        Show debug info
+      </label>
+    </section>
 
-      <pre v-if="procoreContext">
-    {{ procoreContext }}
-      </pre>
-
-      <p v-else>
-        Waiting for Procore context…
-      </p>
+    <!-- Debug info -->
+    <section v-if="debugEnabled" style="margin-top: 1rem;">
+      <h3>Backend Auth Status</h3>
+      <pre v-if="backendStatus">{{ backendStatus }}</pre>
+      <pre v-else>{{ error }}</pre>
+      <h3>Procore Context</h3>
+      <pre>{{ procoreContext }}</pre>
     </section>
   </main>
 </template>
