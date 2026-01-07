@@ -78,7 +78,7 @@ onMounted(() => {
 
     if (
       event.data?.type === 'context' ||
-      event.data?.type === 'app.context'
+      event.data?.type === 'setup'
     ) {
       console.log('✅ Procore context detected')
       procoreContext.value = event.data.context ?? event.data.payload ?? event.data
