@@ -118,8 +118,8 @@ async function sendToBackend() {
 
 <template>
   <main style="padding: 1rem; font-family: system-ui;">
-    <img src="/logo.png" alt="">
-    <h2>Send contract to recipient via Signiflow.</h2>
+    <img src="/logo.png" alt="Signiflow Logo" style="max-width: 100%; height: auto;" />
+    <h3>Send contract to recipient via Signiflow.</h3>
     <!-- Error -->
     <p v-if="error" style="color: red;">
       {{ error }}
@@ -181,7 +181,8 @@ async function sendToBackend() {
       <pre v-if="backendStatus">{{ backendStatus }}</pre>
       <pre v-else>{{ error }}</pre>
       <h3>Procore Context</h3>
-      <pre>{{ procoreContext }}</pre>
+      <pre v-if="procoreContext">{{ procoreContext }}</pre>
+      <pre v-else>No Procore context received yet.</pre>
     </section>
   </main>
 </template>
