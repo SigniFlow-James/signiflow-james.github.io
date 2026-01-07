@@ -102,7 +102,7 @@ async function sendToBackend() {
 
   try {
     const res = await fetch(
-      'https://signiflow-backend-test.onrender.com/api/demo/send',
+      'https://signiflow-backend-test.onrender.com/api/send',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -152,9 +152,9 @@ async function sendToBackend() {
         <textarea v-model="form.customMessage" rows="4" style="width: 100%;" />
       </label>
 
-      <button style="margin-top: 1rem;" :disabled="!isAuthenticated || !procoreContext || sending"
+      <button class="styled-btn" :disabled="!isAuthenticated || !procoreContext || form.name.length <= 0 || form.email.length <= 0 || sending"
         @click="sendToBackend">
-        {{ sending ? 'Sending…' : 'Send' }}
+        {{ sending ? 'Sending…' : 'Send via Signiflow' }}
       </button>
 
       <p v-if="sendResult" style="margin-top: 0.5rem;">
@@ -181,3 +181,49 @@ async function sendToBackend() {
     </section>
   </main>
 </template>
+
+
+<style scoped>
+  .styled-btn {
+  background-color: #00abeb; /* A nice, primary blue color */
+  color: white; /* White text for contrast */
+  border: none; /* Remove default browser border */
+  padding: 15px 30px; /* Ample padding for a comfortable click area */
+  font-size: 16px; /* Readable font size */
+  font-weight: bold; /* Bold text */
+  border-radius: 8px; /* Rounded corners for a modern look */
+  cursor: pointer; /* Changes cursor to a hand icon on hover */
+  transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease; /* Smooth transitions for effects */
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2); /* Subtle initial shadow */
+  text-decoration: none; /* Ensure no underline if using <a> tag */
+  display: inline-block; /* Allows padding and margin to work correctly */
+}
+
+/* Style for when a user hovers over the button */
+.styled-btn:hover {
+  background-color: #0056b3; /* Darker blue on hover */
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3); /* Slightly larger shadow on hover */
+}
+
+/* Style for when the button is actively being pressed down */
+.styled-btn:active {
+  transform: translateY(2px); /* Moves the button down slightly to simulate a press */
+  box-shadow: 0 2px 10px rgba(0, 123, 255, 0.4); /* Reduces the shadow to enhance the pressed look */
+}
+
+/* Style for when the button has the disabled attribute */
+.styled-btn:disabled {
+  background-color: #cccccc; /* Gray background */
+  color: #666666; /* Darker gray text for readability */
+  cursor: not-allowed; /* Shows a 'no entry' sign instead of a hand */
+  box-shadow: none; /* Removes the shadow */
+  transform: none; /* Prevents the 'active' press movement */
+  opacity: 0.7; /* Optional: adds a slight transparency */
+}
+
+/* Ensure hover effects don't trigger when disabled */
+.styled-btn:disabled:hover {
+  background-color: #cccccc;
+  box-shadow: none;
+}
+</style>
