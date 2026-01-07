@@ -5,6 +5,9 @@ export default defineNuxtConfig({
   typescript: {
     tsConfig: {
       include: ['types/**/*.d.ts']
-    }
-  }
+    },
+  },
+  plugins: [
+    './plugins/procore.client.ts'
+  ],
 })
