@@ -79,13 +79,22 @@ onMounted(() => {
       procoreContext.value = event.data.context ?? event.data.payload ?? event.data
     }
   })
-
+  requestProcoreContext()
   console.log('--- message listener attached ---')
 })
 
 /* -----------------------------
    Actions
 ----------------------------- */
+function requestProcoreContext() {
+  console.log('📤 Requesting Procore context')
+
+  window.parent.postMessage(
+    { type: 'get-context' },
+    '*'
+  )
+}
+
 async function sendToBackend() {
   sendResult.value = null
   sending.value = true
