@@ -64,6 +64,12 @@ onMounted(() => {
       error.value = 'Failed to reach backend'
     })
 
+  if (!document.referrer) {
+    console.warn('No document.referrer; cannot open mesage listener')
+    procoreContext.value = "App not loaded inside Procore iframe"
+    return
+  }
+  
   // Procore context listener
   window.addEventListener('message', (event) => {
     if (event.source === window.self) {
@@ -86,12 +92,10 @@ onMounted(() => {
   })
   console.log('--- message listener attached ---')
   console.log(`--- sending initialiser to ${document.referrer} ---`)
-  if (document.referrer) {
-    window.parent.postMessage(
-      { type: 'initialize' },
-      document.referrer
-    )
-  }
+  window.parent.postMessage(
+    { type: 'initialize' },
+    document.referrer
+  )
 })
 
 /* -----------------------------
