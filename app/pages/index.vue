@@ -50,7 +50,7 @@ onMounted(() => {
   console.log('window.Procore value:', (window as any).Procore)
 
   // Backend auth status
-  fetch('https://signiflow-backend-test.onrender.com/api/auth/status')
+  fetch('https://signiflow-procore-backend-net.onrender.com/api/auth/status')
     .then(res => {
       console.log('auth/status response:', res.status)
       return res.json()
@@ -104,7 +104,7 @@ async function sendToBackend() {
 
   try {
     const res = await fetch(
-      'https://signiflow-backend-test.onrender.com/api/send',
+      'https://signiflow-procore-backend-net.onrender.com/api/send',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
