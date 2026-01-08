@@ -4,10 +4,7 @@ import { ref, onMounted, computed } from 'vue'
 /* -----------------------------
    State
 ----------------------------- */
-const backendStatus = ref<null | {
-  authenticated: boolean
-  expiresAt: number | null
-}>(null)
+const backendStatus = ref<null | BackendStatus>(null)
 
 const error = ref<string | null>(null)
 const procoreContext = ref<any>(null)
@@ -49,27 +46,14 @@ onMounted(() => {
   console.log('window.Procore exists:', Boolean((window as any).Procore))
   console.log('window.Procore value:', (window as any).Procore)
 
-  // Backend auth status
-  fetch('https://signiflow-procore-backend-net.onrender.com/api/auth/status')
-    .then(res => {
-      console.log('auth/status response:', res.status)
-      return res.json()
-    })
-    .then(data => {
-      console.log('auth/status payload:', data)
-      backendStatus.value = data
-    })
-    .catch(err => {
-      console.error('auth/status error:', err)
-      error.value = 'Failed to reach backend'
-    })
+  fetchBackendStatus()
 
   if (!document.referrer) {
     console.warn('No document.referrer; cannot open mesage listener')
     procoreContext.value = "App not loaded inside Procore iframe"
     return
   }
-  
+
   // Procore context listener
   window.addEventListener('message', (event) => {
     if (event.source === window.self) {
@@ -101,10 +85,74 @@ onMounted(() => {
 /* -----------------------------
    Actions
 ----------------------------- */
+interface BackendStatus {
+  authenticated: boolean;
+  expiresAt: number | null;
+}
+
+function fetchBackendStatus(): boolean {
+  fetch('https://signiflow-procore-backend-net.onrender.com/api/auth/status')
+    .then(res => {
+      console.log('auth/status response:', res.status)
+      return res.json()
+    })
+    .then(data => {
+      console.log('auth/status payload:', data)
+      backendStatus.value = data
+    })
+    .catch(err => {
+      console.error('auth/status error:', err)
+      error.value = 'Failed to reach backend'
+    })
+
+  if (backendStatus.value) {
+    return true
+  } else {
+    return tryRefreshAuth()
+  }
+}
+
+function tryRefreshAuth(): boolean {
+  fetch(
+    'https://signiflow-procore-backend-net.onrender.com/api/auth/refresh',
+    { method: 'POST' }
+  ).then(res => {
+    console.log('auth/refresh response:', res.status)
+    return res.json()
+  }).then(data => {
+    console.log('auth/refresh payload:', data)
+    if (data.refreshed) {
+      console.log('🔁 Auth refreshed')
+      backendStatus.value = data.auth
+    }
+    else if (data.loginRequired) {
+      error.value = 'Refresh failed, manual authentication required'
+    }
+    else {
+      error.value = 'Refresh failed, (500) server error'
+    }
+  }).catch(err => {
+    console.error('Refresh failed', err)
+    return `Refresh failed: ${err}`
+  })
+
+  if (backendStatus.value) {
+    return true
+  } else {
+    return false
+  }
+}
+
 
 async function sendToBackend() {
   sendResult.value = null
   sending.value = true
+
+  if ((!backendStatus.value || !backendStatus.value.authenticated) && !fetchBackendStatus()) {
+    error.value = 'Not authenticated with backend'
+    sending.value = false
+    return
+  }
 
   try {
     const res = await fetch(
@@ -131,6 +179,7 @@ async function sendToBackend() {
   }
 }
 </script>
+
 
 <template>
   <main style="padding: 1rem; font-family: system-ui;">
@@ -159,7 +208,7 @@ async function sendToBackend() {
       </label>
 
       <button class="styled-btn"
-        :disabled="!isAuthenticated || !procoreContext || form.name.length <= 0 || form.email.length <= 0 || sending"
+        :disabled="!procoreContext || form.name.length <= 0 || form.email.length <= 0 || sending"
         @click="sendToBackend">
         {{ sending ? 'Sending…' : 'Send via Signiflow' }}
       </button>
