@@ -126,7 +126,7 @@ function tryRefreshAuth(): boolean {
       backendStatus.value = data.auth
     }
     else if (data.loginRequired) {
-      error.value = 'Refresh failed, manual authentication required'
+      error.value = 'AutoAuth failed, manual authentication login required'
     }
     else {
       error.value = 'Refresh failed, (500) server error'

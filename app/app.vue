@@ -1,4 +1,4 @@
-<script setup>
+<!-- <script setup>
 useHead({
   script: [
     {
@@ -7,7 +7,7 @@ useHead({
     }
   ]
 })
-</script>
+</script> -->
 
 <template>
   <NuxtPage />
