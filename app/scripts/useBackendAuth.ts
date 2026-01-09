@@ -13,7 +13,7 @@ export function useBackendAuth() {
   const error = ref<string | null>(null)
 
   function fetchBackendStatus(): boolean {
-    fetch('https://signiflow-procore-backend-net.onrender.com/api/auth/status')
+    fetch('https://signiflow-procore-backend-net.onrender.com/api/oauth/status')
       .then(res => {
         console.log('auth/status response:', res.status)
         return res.json()
@@ -36,7 +36,7 @@ export function useBackendAuth() {
 
   function tryRefreshAuth(): boolean {
     fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/auth/refresh',
+      'https://signiflow-procore-backend-net.onrender.com/api/oauth/refresh',
       { method: 'POST' }
     ).then(res => {
       console.log('auth/refresh response:', res.status)
