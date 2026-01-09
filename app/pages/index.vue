@@ -45,6 +45,7 @@ onMounted(() => {
 })
 
 async function sendToBackend() {
+  error.value = null
   sendResult.value = null
   sending.value = true
 
