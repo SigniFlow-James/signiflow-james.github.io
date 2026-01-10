@@ -51,15 +51,18 @@ export function useBackendAuth() {
       return res.json()
     }).then(data => {
       console.log('oauth/refresh payload:', data)
-      if (data.refreshed) {
+      if (data.authenticated) {
         console.log('🔁 Auth refreshed')
-        backendStatus.value = data.auth
+        backendStatus.value = data
       }
-      else if (data.loginRequired) {
-        error.value = 'AutoAuth failed, manual authentication login required'
+      else if (!data.procore.authenticated) {
+        error.value = 'Procore authentication failed, manual authentication login required'
+      }
+      else if (!data.signiflow.authenticated) {
+        error.value = 'Signiflow authentication failed, please seek administrator assistance'
       }
       else {
-        error.value = 'Refresh failed, (500) server error'
+        error.value = 'Authentication failed: ' + (data.error || 'unknown error')
       }
     }).catch(err => {
       console.error('Refresh failed', err)
