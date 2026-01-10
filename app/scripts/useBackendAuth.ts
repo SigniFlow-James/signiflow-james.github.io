@@ -3,9 +3,17 @@
 // ========================================
 import { ref } from 'vue'
 
-interface BackendStatus {
-  authenticated: boolean
-  expiresAt: number | null
+interface OAuthInfo {
+    authenticated: boolean;
+    expiresAt?: Date;
+}
+
+export interface BackendStatus {
+    procore?: OAuthInfo;
+    signiflow?: OAuthInfo;
+    authenticated?: boolean;
+    nextExpiresAt?: Date;
+    error?: string;
 }
 
 export function useBackendAuth() {
@@ -27,7 +35,7 @@ export function useBackendAuth() {
         error.value = 'Failed to reach backend'
       })
 
-    if (backendStatus.value) {
+    if (backendStatus.value?.authenticated) {
       return true
     } else {
       return tryRefreshAuth()

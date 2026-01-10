@@ -45,8 +45,12 @@ async function sendToBackend() {
   error.value = null
   sendResult.value = null
   sending.value = true
-
-  if (!isAuthenticated.value && !fetchBackendStatus()) {
+  
+  if (
+    !isAuthenticated.value && // Check if auth exists
+    (backendStatus.value?.nextExpiresAt ?? new Date() < new Date()) && // Check if expired
+    !fetchBackendStatus() // Try to refresh
+  ) {
     error.value = 'Not authenticated with backend'
     sending.value = false
     return

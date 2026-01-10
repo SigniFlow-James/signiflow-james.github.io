@@ -2,10 +2,7 @@
 // FILE: components/DebugPanel.vue
 ======================================== -->
 <script setup lang="ts">
-interface BackendStatus {
-  authenticated: boolean
-  expiresAt: number | null
-}
+import type { BackendStatus } from '~/scripts/useBackendAuth';
 
 const props = defineProps<{
   enabled: boolean
