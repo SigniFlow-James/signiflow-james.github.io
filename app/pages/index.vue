@@ -14,7 +14,8 @@ const sending = ref(false)
 const sendResult = ref<string | null>(null)
 
 const form = ref({
-  name: '',
+  firstNames: '',
+  lastName: '',
   email: '',
   customMessage: ''
 })

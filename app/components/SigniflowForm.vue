@@ -3,7 +3,8 @@
 ======================================== -->
 <script setup lang="ts">
 interface FormData {
-  name: string
+  firstNames: string
+  lastName: string
   email: string
   customMessage: string
 }
@@ -25,10 +26,11 @@ const formModel = computed({
   set: (value) => emit('update:form', value)
 })
 
-const isDisabled = computed(() => 
-  !props.procoreContext || 
-  props.form.name.length <= 0 || 
-  props.form.email.length <= 0 || 
+const isDisabled = computed(() =>
+  !props.procoreContext ||
+  props.form.firstNames.length <= 0 ||
+  props.form.lastName.length <= 0 ||
+  props.form.email.length <= 0 ||
   props.sending
 )
 </script>
@@ -37,36 +39,23 @@ const isDisabled = computed(() =>
   <section style="margin-top: 1rem;">
     <label>
       Name<br />
-      <input 
-        v-model="formModel.name" 
-        type="text" 
-        style="width: 100%;" 
-      />
+      <div class="name-row">
+        <input v-model="formModel.firstNames" placeholder="First names" type="text" />
+        <input v-model="formModel.lastName" placeholder="Last name" type="text" />
+      </div>
     </label>
 
     <label>
       Email<br />
-      <input 
-        v-model="formModel.email" 
-        type="text" 
-        style="width: 100%;" 
-      />
+      <input v-model="formModel.email" type="text" style="width: 100%;" />
     </label>
 
     <label style="display: block; margin-top: 1rem;">
       Custom Message<br />
-      <textarea 
-        v-model="formModel.customMessage" 
-        rows="4" 
-        style="width: 100%;" 
-      />
+      <textarea v-model="formModel.customMessage" rows="4" style="width: 100%;" />
     </label>
 
-    <button 
-      class="styled-btn"
-      :disabled="isDisabled"
-      @click="emit('submit')"
-    >
+    <button class="styled-btn" :disabled="isDisabled" @click="emit('submit')">
       {{ sending ? 'Sending…' : 'Send via Signiflow' }}
     </button>
 
@@ -77,6 +66,18 @@ const isDisabled = computed(() =>
 </template>
 
 <style scoped>
+
+.name-row {
+  display: flex;
+  gap: 8px;
+}
+
+.name-row input {
+  flex: 1;
+  width: 100%;
+}
+
+
 .styled-btn {
   background-color: #00abeb;
   color: white;
