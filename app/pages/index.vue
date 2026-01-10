@@ -70,7 +70,7 @@ async function sendToBackend() {
     )
     const data = await res.json()
     if (!res.ok) {
-      error.value = `Error sending to backend: HTTP ${res.status}}`
+      error.value = `Error sending to backend: HTTP ${res.status}`
       throw new Error(`${data.error ?? `HTTP ${res.status}`}`)
     }
 
