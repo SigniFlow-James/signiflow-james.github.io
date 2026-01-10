@@ -47,12 +47,12 @@ const isDisabled = computed(() =>
 
     <label>
       Email<br />
-      <input v-model="formModel.email" type="text" style="width: 100%;" />
+      <input v-model="formModel.email" placeholder="recipient@example.com" type="text" style="width: 100%;" />
     </label>
 
     <label style="display: block; margin-top: 1rem;">
       Custom Message<br />
-      <textarea v-model="formModel.customMessage" rows="4" style="width: 100%;" />
+      <textarea v-model="formModel.customMessage" placeholder="Please sign this document." rows="4" style="width: 100%;" />
     </label>
 
     <button class="styled-btn" :disabled="isDisabled" @click="emit('submit')">
