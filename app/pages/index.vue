@@ -25,7 +25,7 @@ const isAuthenticated = computed(
 
 onMounted(() => {
   console.log('--- Signiflow side panel mounted ---')
-  
+
   // Environment diagnostics
   console.log('window.location.href:', window.location.href)
   console.log('window.self === window.top:', window.self === window.top)
@@ -37,9 +37,6 @@ onMounted(() => {
     console.log('window.parent.location: [blocked by browser]')
   }
 
-  console.log('window.Procore exists:', Boolean((window as any).Procore))
-  console.log('window.Procore value:', (window as any).Procore)
-
   fetchBackendStatus()
   initializeProcoreListener()
 })
@@ -49,7 +46,7 @@ async function sendToBackend() {
   sendResult.value = null
   sending.value = true
 
-  if ((!backendStatus.value || !backendStatus.value.authenticated) && !fetchBackendStatus()) {
+  if (!isAuthenticated.value && !fetchBackendStatus()) {
     error.value = 'Not authenticated with backend'
     sending.value = false
     return
@@ -67,9 +64,10 @@ async function sendToBackend() {
         })
       }
     )
-
+    const data = await res.json()
     if (!res.ok) {
-      throw new Error(`HTTP ${res.status}`)
+      error.value = `Error sending to backend: HTTP ${res.status}}`
+      throw new Error(`${data.error ?? `HTTP ${res.status}`}`)
     }
 
     sendResult.value = 'Sent successfully'
@@ -84,23 +82,14 @@ async function sendToBackend() {
 <template>
   <main style="padding: 1rem; font-family: system-ui;">
     <SigniflowHeader />
-    
+
     <ErrorMessage v-if="error" :message="error" />
 
-    <SigniflowForm
-      v-model:form="form"
-      :procore-context="procoreContext"
-      :sending="sending"
-      :send-result="sendResult"
-      @submit="sendToBackend"
-    />
+    <SigniflowForm v-model:form="form" :procore-context="procoreContext" :sending="sending" :send-result="sendResult"
+      @submit="sendToBackend" />
 
-    <DebugPanel
-      v-model:enabled="debugEnabled"
-      :backend-status="backendStatus"
-      :procore-context="procoreContext"
-      :error="error"
-    />
+    <DebugPanel v-model:enabled="debugEnabled" :backend-status="backendStatus" :procore-context="procoreContext"
+      :error="error" />
   </main>
 </template>
 

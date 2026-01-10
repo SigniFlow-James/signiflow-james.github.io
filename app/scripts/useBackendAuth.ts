@@ -1,5 +1,5 @@
 // ========================================
-// FILE: composables/useBackendAuth.ts
+// FILE: scripts/useBackendAuth.ts
 // ========================================
 import { ref } from 'vue'
 
@@ -39,10 +39,10 @@ export function useBackendAuth() {
       'https://signiflow-procore-backend-net.onrender.com/api/oauth/refresh',
       { method: 'POST' }
     ).then(res => {
-      console.log('auth/refresh response:', res.status)
+      console.log('oauth/refresh response:', res.status)
       return res.json()
     }).then(data => {
-      console.log('auth/refresh payload:', data)
+      console.log('oauth/refresh payload:', data)
       if (data.refreshed) {
         console.log('🔁 Auth refreshed')
         backendStatus.value = data.auth
@@ -74,5 +74,5 @@ export function useBackendAuth() {
 }
 
 // ========================================
-// END FILE: composables/useBackendAuth.ts
+// END FILE: scripts/useBackendAuth.ts
 // ========================================

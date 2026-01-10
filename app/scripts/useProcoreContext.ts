@@ -1,5 +1,5 @@
 // ========================================
-// FILE: composables/useProcoreContext.ts
+// FILE: scripts/useProcoreContext.ts
 // ========================================
 import { ref } from 'vue'
 
@@ -50,5 +50,5 @@ export function useProcoreContext() {
 }
 
 // ========================================
-// END FILE: composables/useProcoreContext.ts
+// END FILE: scripts/useProcoreContext.ts
 // ========================================
