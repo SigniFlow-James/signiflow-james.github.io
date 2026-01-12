@@ -51,9 +51,9 @@ export function useBackendAuth() {
       return res.json()
     }).then(data => {
       console.log('oauth/refresh payload:', data)
+      backendStatus.value = data
       if (data.authenticated) {
         console.log('🔁 Auth refreshed')
-        backendStatus.value = data
       }
       else if (!data.procore.authenticated) {
         error.value = 'Procore authentication failed, manual authentication login required'
@@ -69,7 +69,7 @@ export function useBackendAuth() {
       error.value = `Refresh failed: ${err}`
     })
 
-    if (backendStatus.value) {
+    if (backendStatus.value?.authenticated) {
       return true
     } else {
       return false
