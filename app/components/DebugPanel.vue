@@ -2,7 +2,7 @@
 // FILE: components/DebugPanel.vue
 ======================================== -->
 <script setup lang="ts">
-import type { BackendStatus } from '~/scripts/useBackendAuth';
+import type { BackendStatus } from '~/scripts/models';
 
 const props = defineProps<{
   enabled: boolean
