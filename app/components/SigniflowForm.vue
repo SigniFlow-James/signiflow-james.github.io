@@ -2,15 +2,7 @@
 // FILE: components/SigniflowForm.vue
 ======================================== -->
 <script setup lang="ts">
-import type { Recipient } from '~/scripts/models'
-
-interface FormData {
-  manager: Recipient | null
-  firstNames: string
-  lastName: string
-  email: string
-  customMessage: string
-}
+import type { Recipient, FormData } from '~/scripts/models'
 
 const props = defineProps<{
   form: FormData

@@ -2,7 +2,7 @@
 // FILE: pages/index.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { onMounted, computed } from 'vue'
 import { useProcoreContext } from '~/scripts/useProcoreContext'
 import { useBackendAuth } from '~/scripts/useBackendAuth'
 

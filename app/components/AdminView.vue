@@ -2,7 +2,7 @@
 // FILE: components/AdminView.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 
 const props = defineProps<{
   backendStatus: any
@@ -23,7 +23,7 @@ async function handleLogin() {
 
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/admin/login',
+      'https://signiflow-procore-backend-net.onrender.com/admin/login',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -59,9 +59,9 @@ function handleLogout() {
       
       <ErrorMessage v-if="loginError" :message="loginError" />
       
-      <form @submit.prevent="handleLogin" style="display: flex; flex-direction: column; gap: 1rem;">
+      <form @submit.prevent="handleLogin">
         <div>
-          <label for="username" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+          <label for="username">
             Username
           </label>
           <input
@@ -69,12 +69,12 @@ function handleLogout() {
             v-model="loginForm.username"
             type="text"
             required
-            style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
+            class="form-input"
           />
         </div>
         
         <div>
-          <label for="password" style="display: block; margin-bottom: 0.5rem; font-weight: 500;">
+          <label for="password">
             Password
           </label>
           <input
@@ -82,17 +82,18 @@ function handleLogout() {
             v-model="loginForm.password"
             type="password"
             required
-            style="width: 100%; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px;"
+            class="form-input"
           />
         </div>
-        
-        <button
+        <div>
+          <button
           type="submit"
-          :disabled="loggingIn"
-          style="padding: 0.75rem; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 500;"
+          :disabled="loggingIn || !loginForm.username || !loginForm.password"
+          class="styled-btn"
         >
           {{ loggingIn ? 'Logging in...' : 'Login' }}
         </button>
+        </div>
       </form>
     </div>
     
@@ -105,6 +106,70 @@ function handleLogout() {
   </div>
 </template>
 
+<style scoped>
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.styled-btn {
+  width: 100%;
+  margin-top: 0.5rem;
+  background-color: #00abeb;
+  color: white;
+  border: none;
+  padding: 15px 30px;
+  font-size: 16px;
+  font-weight: bold;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.1s ease, box-shadow 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 123, 255, 0.2);
+  text-decoration: none;
+  display: inline-block;
+}
+
+.styled-btn:hover {
+  background-color: #0056b3;
+  box-shadow: 0 6px 20px rgba(0, 123, 255, 0.3);
+}
+
+.styled-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 10px rgba(0, 123, 255, 0.4);
+}
+
+.styled-btn:disabled {
+  background-color: #cccccc;
+  color: #666666;
+  cursor: not-allowed;
+  box-shadow: none;
+  transform: none;
+  opacity: 0.7;
+}
+
+.styled-btn:disabled:hover {
+  background-color: #cccccc;
+  box-shadow: none;
+}
+</style>
 <!-- ========================================
 // END FILE: components/AdminView.vue
 ======================================== -->

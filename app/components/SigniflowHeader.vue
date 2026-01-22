@@ -2,11 +2,13 @@
 // FILE: components/SigniflowHeader.vue
 ======================================== -->
 <template>
-  <img 
+  <div style="display: flex; align-items: center; justify-content: center;">
+    <img 
     src="/logo.png" 
     alt="Signiflow Logo" 
-    style="max-width: 100%; height: auto;" 
+    style="max-width: 100%; height: auto; " 
   />
+  </div>
 </template>
 
 <!-- ========================================
