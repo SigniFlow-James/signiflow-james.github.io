@@ -2,19 +2,7 @@
 // FILE: scripts/useBackendAuth.ts
 // ========================================
 import { ref } from 'vue'
-
-interface OAuthInfo {
-    authenticated: boolean;
-    expiresAt?: Date;
-}
-
-export interface BackendStatus {
-    procore?: OAuthInfo;
-    signiflow?: OAuthInfo;
-    authenticated?: boolean;
-    nextExpiresAt?: Date;
-    error?: string;
-}
+import type { BackendStatus } from './models'
 
 export function useBackendAuth() {
   const backendStatus = ref<null | BackendStatus>(null)

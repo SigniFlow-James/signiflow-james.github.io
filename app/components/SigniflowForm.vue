@@ -2,7 +2,10 @@
 // FILE: components/SigniflowForm.vue
 ======================================== -->
 <script setup lang="ts">
+import type { Recipient } from '~/scripts/models'
+
 interface FormData {
+  manager: Recipient | null
   firstNames: string
   lastName: string
   email: string
@@ -14,6 +17,7 @@ const props = defineProps<{
   procoreContext: any
   sending: boolean
   sendResult: string | null
+  managers: Recipient[]
 }>()
 
 const emit = defineEmits<{
@@ -31,6 +35,7 @@ const isDisabled = computed(() =>
   props.form.firstNames.length <= 0 ||
   props.form.lastName.length <= 0 ||
   props.form.email.length <= 0 ||
+  props.form.manager === null ||
   props.sending
 )
 </script>
@@ -38,21 +43,26 @@ const isDisabled = computed(() =>
 <template>
   <section style="margin-top: 1rem;">
     <label>
+      Manager<br />
+      <ManagersDropdown v-model="formModel.manager" :recipients="props.managers" />
+    </label>
+    <label>
       Name<br />
       <div class="name-row">
-        <input v-model="formModel.firstNames" placeholder="First names" type="text" />
-        <input v-model="formModel.lastName" placeholder="Last name" type="text" />
+        <input v-model="formModel.firstNames" placeholder="First names" type="text" class="form-input" />
+        <input v-model="formModel.lastName" placeholder="Last name" type="text" class="form-input" />
       </div>
     </label>
 
     <label>
       Email<br />
-      <input v-model="formModel.email" placeholder="recipient@example.com" type="text" style="width: 100%;" />
+      <input v-model="formModel.email" placeholder="recipient@example.com" type="text" class="form-input" />
     </label>
 
     <label style="display: block; margin-top: 1rem;">
       Custom Message<br />
-      <textarea v-model="formModel.customMessage" placeholder="Please sign this document." rows="4" style="width: 100%;" />
+      <textarea v-model="formModel.customMessage" placeholder="Please sign this document." rows="4"
+        class="form-textarea" />
     </label>
 
     <button class="styled-btn" :disabled="isDisabled" @click="emit('submit')">
@@ -66,7 +76,6 @@ const isDisabled = computed(() =>
 </template>
 
 <style scoped>
-
 .name-row {
   display: flex;
   gap: 8px;
@@ -74,9 +83,29 @@ const isDisabled = computed(() =>
 
 .name-row input {
   flex: 1;
-  width: 100%;
 }
 
+.form-input,
+.form-textarea {
+  width: 100%;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.form-input:focus,
+.form-textarea:focus {
+  outline: none;
+  border-color: #4a90e2;
+}
+
+.form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
 
 .styled-btn {
   background-color: #00abeb;

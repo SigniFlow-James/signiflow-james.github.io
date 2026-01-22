@@ -14,6 +14,7 @@ const sending = ref(false)
 const sendResult = ref<string | null>(null)
 
 const form = ref({
+  manager: null,
   firstNames: '',
   lastName: '',
   email: '',
@@ -90,7 +91,7 @@ async function sendToBackend() {
 
     <ErrorMessage v-if="error" :message="error" />
 
-    <SigniflowForm v-model:form="form" :procore-context="procoreContext" :sending="sending" :send-result="sendResult"
+    <SigniflowForm v-model:form="form" :procore-context="procoreContext" :managers="backendStatus?.managers || []" :sending="sending" :send-result="sendResult"
       @submit="sendToBackend" />
 
     <DebugPanel v-model:enabled="debugEnabled" :backend-status="backendStatus" :procore-context="procoreContext"
