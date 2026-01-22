@@ -3,23 +3,11 @@ interface OAuthInfo {
   expiresAt?: Date;
 }
 
-export interface Recipient {
-  First: string;
-  Last: string;
-  Email: string;
-}
-
-export interface UserInfo {
-  procoreUserID?: string; 
-  middleManToken?: string;
-}
-
 export interface BackendStatus {
   procore?: OAuthInfo;
   signiflow?: OAuthInfo;
   authenticated?: boolean;
   nextExpiresAt?: Date;
-  managers?: Recipient[];
   error?: string;
 }
 
@@ -35,11 +23,15 @@ export interface FilterData {
   vendors: FilterItem[]
 }
 
+export interface Recipient {
+  First: string;
+  Last: string;
+  Email: string;
+}
+
 export interface FormData {
   manager: Recipient | null
-  firstNames: string
-  lastName: string
-  email: string
+  vendor: Recipient | null
   customMessage: string
 }
 

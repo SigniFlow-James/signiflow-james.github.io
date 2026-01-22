@@ -24,10 +24,8 @@ const formModel = computed({
 
 const isDisabled = computed(() =>
   !props.procoreContext ||
-  props.form.firstNames.length <= 0 ||
-  props.form.lastName.length <= 0 ||
-  props.form.email.length <= 0 ||
-  props.form.manager === null ||
+  !props.form.manager ||
+  !props.form.vendor ||
   props.sending
 )
 </script>
@@ -38,17 +36,10 @@ const isDisabled = computed(() =>
       Manager<br />
       <ManagersDropdown v-model="formModel.manager" :recipients="props.managers" />
     </label>
+    
     <label>
-      Name<br />
-      <div class="name-row">
-        <input v-model="formModel.firstNames" placeholder="First names" type="text" class="form-input" />
-        <input v-model="formModel.lastName" placeholder="Last name" type="text" class="form-input" />
-      </div>
-    </label>
-
-    <label>
-      Email<br />
-      <input v-model="formModel.email" placeholder="recipient@example.com" type="text" class="form-input" />
+      Vendor<br />
+      <ManagersDropdown v-model="formModel.vendor" :recipients="props.managers" />
     </label>
 
     <label style="display: block; margin-top: 1rem;">
