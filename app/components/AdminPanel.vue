@@ -20,7 +20,7 @@ const filters = ref<FilterData>({
 })
 
 const loading = ref(false)
-const saveError = ref<string | null>(null)
+const pageError = ref<string | null>(null)
 const saveSuccess = ref(false)
 const testingRecipients = ref(false)
 const testResults = ref<any>(null)
@@ -32,11 +32,11 @@ onMounted(async () => {
 
 async function loadFilters() {
   loading.value = true
-  saveError.value = null
+  pageError.value = null
   
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/admin/filters'
+      'https://signiflow-procore-backend-net.onrender.com/admin/filters'
     )
     
     if (!res.ok) {
@@ -49,20 +49,31 @@ async function loadFilters() {
       vendors: data.vendors || []
     }
   } catch (err: any) {
-    saveError.value = err.message || 'Failed to load filters'
+    pageError.value = err.message || 'Failed to load filters'
   } finally {
     loading.value = false
   }
 }
 
+async function linkAuth() {
+  pageError.value = null
+  const newWindow = window.open('https://signiflow-procore-backend-net.onrender.com/oauth/start', '_blank');
+  if (newWindow) {
+    console.log('New window opened for authentication.');
+  } else {
+    alert('Popup blocked! Please allow popups for this site to continue.');
+    pageError.value = 'Popup blocked. Please enable popups to continue.';
+  }
+}
+
 async function saveFilters() {
   loading.value = true
-  saveError.value = null
+  pageError.value = null
   saveSuccess.value = false
   
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/admin/filters',
+      'https://signiflow-procore-backend-net.onrender.com/admin/filters',
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -78,7 +89,7 @@ async function saveFilters() {
     saveSuccess.value = true
     setTimeout(() => { saveSuccess.value = false }, 3000)
   } catch (err: any) {
-    saveError.value = err.message || 'Failed to save filters'
+    pageError.value = err.message || 'Failed to save filters'
   } finally {
     loading.value = false
   }
@@ -134,6 +145,13 @@ function closeTestResults() {
       <h2>Admin Panel - Filter Management</h2>
       <div class="header-actions">
         <button
+          @click="linkAuth"
+          :disabled="loading"
+          class="btn btn-secondary"
+          >
+          Link Procore Account
+        </button>
+        <button
           @click="testRecipients"
           :disabled="testingRecipients"
           class="btn btn-info"
@@ -146,7 +164,7 @@ function closeTestResults() {
       </div>
     </div>
     
-    <ErrorMessage v-if="saveError" :message="saveError" />
+    <ErrorMessage v-if="pageError" :message="pageError" />
     
     <div v-if="saveSuccess" class="success-message">
       Filters saved successfully!

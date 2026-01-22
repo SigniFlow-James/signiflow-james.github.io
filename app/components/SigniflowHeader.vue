@@ -2,7 +2,7 @@
 // FILE: components/SigniflowHeader.vue
 ======================================== -->
 <template>
-  <div style="display: flex; align-items: center; justify-content: center;">
+  <div style="display: flex; align-items: center; justify-content: center; margin-bottom: 0.5rem;">
     <img 
     src="/logo.png" 
     alt="Signiflow Logo" 

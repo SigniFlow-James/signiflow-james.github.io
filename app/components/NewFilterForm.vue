@@ -25,7 +25,7 @@ function updateField(field: keyof FilterItem, value: any) {
     
     <div class="form-fields">
       <div class="form-group">
-        <label>Project ID (leave empty for company-wide)</label>
+        <label>Project ID (leave empty for company-wide filtering)</label>
         <input
           :value="modelValue.projectId"
           @input="updateField('projectId', ($event.target as HTMLInputElement).value || null)"
@@ -66,7 +66,7 @@ function updateField(field: keyof FilterItem, value: any) {
           type="checkbox"
           id="newFilterInclude"
         />
-        <label for="newFilterInclude">Include (uncheck to exclude)</label>
+        <label for="newFilterInclude">Inclusive? (uncheck to exclude)</label>
       </div>
       
       <button
@@ -114,6 +114,7 @@ function updateField(field: keyof FilterItem, value: any) {
 
 .form-input {
   width: 100%;
+  box-sizing: border-box;
   padding: 0.5rem;
   border: 1px solid #ccc;
   border-radius: 4px;
