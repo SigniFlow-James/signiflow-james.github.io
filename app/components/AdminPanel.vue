@@ -147,7 +147,7 @@ function closeTestResults() {
         <button
           @click="linkAuth"
           :disabled="loading"
-          class="btn btn-secondary"
+          class="btn btn-info"
           >
           Link Procore Account
         </button>
