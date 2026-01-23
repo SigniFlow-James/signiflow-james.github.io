@@ -17,7 +17,7 @@ const emit = defineEmits<{
 const selectedCompanyId = ref<string | null>(null)
 const selectedProjectId = ref<string | null>(null)
 const filters = ref<FilterData>({
-  users: []
+  filters: []
 })
 const viewers = ref<ViewerData>({
   viewers: []
@@ -34,14 +34,13 @@ const canSave = computed(() => {
 })
 
 onMounted(async () => {
-  await loadFilters()
-  await loadViewers()
+  await loadFiltersAndViewers()
 })
 
-async function getUserInfo(endpoint: string, query?: URLSearchParams) {
+async function getUserInfo() {
   try {
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/admin/${endpoint}${query ? '?' + query.toString() : ''}`
+      `https://signiflow-procore-backend-net.onrender.com/admin/users`
     )
 
     if (!res.ok) {
@@ -57,49 +56,28 @@ async function getUserInfo(endpoint: string, query?: URLSearchParams) {
   }
 }
 
-async function loadFilters() {
+async function loadFiltersAndViewers() {
   loading.value = true
   pageError.value = null
 
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/filters'
+      'https://signiflow-procore-backend-net.onrender.com/admin/dashboard'
     )
 
     if (!res.ok) {
-      throw new Error('Failed to load filters')
+      throw new Error('Failed to load dashboard data')
     }
 
     const data = await res.json()
     filters.value = {
-      users: data.users || []
+      filters: data.filters || []
     }
-  } catch (err: any) {
-    pageError.value = err.message || 'Failed to load filters'
-  } finally {
-    loading.value = false
-  }
-}
-
-async function loadViewers() {
-  loading.value = true
-  pageError.value = null
-
-  try {
-    const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/viewers'
-    )
-
-    if (!res.ok) {
-      throw new Error('Failed to load viewers')
-    }
-
-    const data = await res.json()
     viewers.value = {
       viewers: data.viewers || []
     }
   } catch (err: any) {
-    pageError.value = err.message || 'Failed to load viewers'
+    pageError.value = err.message || 'Failed to load dashboard data'
   } finally {
     loading.value = false
   }
@@ -129,7 +107,7 @@ async function saveFilters() {
   try {
     // Add company ID to all filters before saving
     const filtersWithCompany = {
-      users: filters.value.users.map(f => ({ ...f, companyId: selectedCompanyId.value }))
+      filters: filters.value.filters.map(f => ({ ...f, companyId: selectedCompanyId.value }))
     }
 
     const res = await fetch(
@@ -278,7 +256,7 @@ function closeTestResults() {
 
     <div v-else class="filters-grid">
       <FilterSection 
-        v-model="filters.users" 
+        v-model="filters.filters" 
         title="User Filters" 
         :company-id="selectedCompanyId"
         :default-project-id="selectedProjectId"

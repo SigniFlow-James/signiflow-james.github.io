@@ -26,7 +26,7 @@ export interface FilterItem {
 }
 
 export interface FilterData {
-  users: FilterItem[]
+  filters: FilterItem[]
 }
 
 export interface FilterType {
@@ -75,7 +75,7 @@ export interface FilterItem {
 }
 
 export interface FilterData {
-  users: FilterItem[]
+  filters: FilterItem[]
 }
 
 export interface ViewerItem {

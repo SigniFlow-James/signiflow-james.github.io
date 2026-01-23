@@ -15,8 +15,7 @@ const debugEnabled = ref(false)
 const sending = ref(false)
 const sendResult = ref<string | null>(null)
 const localError = ref<string | null>(null)
-const managers = ref<Recipient[]>([])
-const vendors = ref<Recipient[]>([])
+const signers = ref<Recipient[]>([])
 
 const form = ref({
   manager: null,
@@ -103,12 +102,11 @@ async function getRecipients() {
       throw new Error(`${data.error ?? `HTTP ${res.status}`}`)
     }
 
-    if (!data.managers || !data.vendors) {
+    if (!data.signers) {
       console.error(["Invalid recipients data from backend:", data])
       throw new Error('Invalid recipients data from backend')
     }
-    managers.value = data.managers
-    vendors.value = data.vendors
+    signers.value = data.signers
   } catch (err: any) {
     localError.value = err.message ?? 'Send failed'
   }
@@ -126,8 +124,7 @@ const displayError = computed(() => props.error || localError.value)
     <SigniflowForm 
       v-model:form="form" 
       :procore-context="procoreContext" 
-      :managers="managers"
-      :vendors="vendors"
+      :managers="signers"
       :sending="sending" 
       :send-result="sendResult"
       @submit="sendToBackend" 
