@@ -2,18 +2,57 @@
 // FILE: components/FilterItem.vue
 ======================================== -->
 <script setup lang="ts">
-import type { FilterItem, FilterType } from '~/scripts/models'
+import { ref, onMounted, watch } from 'vue'
+import type { FilterItem, FilterType, Project } from '~/scripts/models'
 
 const props = defineProps<{
   filter: FilterItem
   filterTypes: FilterType[]
   index: number
+  companyId: string | null
+  defaultProjectId: string | null
+  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
   update: [field: keyof FilterItem, value: any]
   delete: []
 }>()
+
+const projects = ref<Project[]>([])
+const loadingProjects = ref(false)
+
+onMounted(async () => {
+  if (props.companyId) {
+    await loadProjects()
+  }
+})
+
+watch(() => props.companyId, async (newCompanyId) => {
+  if (newCompanyId) {
+    await loadProjects()
+  } else {
+    projects.value = []
+  }
+})
+
+async function loadProjects() {
+  if (!props.companyId) return
+  
+  loadingProjects.value = true
+  try {
+    const params = new URLSearchParams({ company_id: props.companyId })
+    const data = await props.getUserInfo('projects', params)
+    projects.value = data
+  } finally {
+    loadingProjects.value = false
+  }
+}
+
+function updateProjectId(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  emit('update', 'projectId', value || null)
+}
 </script>
 
 <template>
@@ -21,14 +60,20 @@ const emit = defineEmits<{
     <div class="filter-content">
       <div class="filter-row">
         <div class="filter-field">
-          <label>Project ID</label>
-          <input
-            :value="filter.projectId"
-            @input="emit('update', 'projectId', ($event.target as HTMLInputElement).value || null)"
-            type="text"
-            placeholder="Company-wide"
+          <label>Project</label>
+          <select
+            :value="filter.projectId || ''"
+            @change="updateProjectId"
+            :disabled="loadingProjects || !companyId"
             class="input-small"
-          />
+          >
+            <option value="">
+              {{ loadingProjects ? 'Loading...' : 'Company-wide' }}
+            </option>
+            <option v-for="project in projects" :key="project.id" :value="project.id">
+              {{ project.name }}
+            </option>
+          </select>
         </div>
         
         <div class="filter-field">
@@ -114,6 +159,12 @@ const emit = defineEmits<{
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.input-small:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+  color: #6c757d;
 }
 
 .filter-checkbox {

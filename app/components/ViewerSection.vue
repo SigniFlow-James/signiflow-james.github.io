@@ -1,135 +1,124 @@
 <!-- ========================================
-// FILE: components/FilterSection.vue
+// FILE: components/ViewerSection.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { FilterItem } from '~/scripts/models';
+import { ref } from 'vue'
+import type { ViewerItem } from '~/scripts/models'
 
 const props = defineProps<{
-  modelValue: FilterItem[]
-  title: string
+  modelValue: ViewerItem[]
   companyId: string | null
   defaultProjectId: string | null
   getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: FilterItem[]]
+  'update:modelValue': [value: ViewerItem[]]
 }>()
 
-const showNewFilter = ref(false)
-const newFilter = ref<FilterItem>({
+const showNewViewer = ref(false)
+const newViewer = ref<ViewerItem>({
   companyId: null,
   projectId: null,
-  type: 0,
-  value: '',
-  include: true
+  type: 'manual',
+  userId: null,
+  firstName: '',
+  lastName: '',
+  email: ''
 })
 
-const filterTypes = computed(() => {
-  return [
-      { value: 0, label: 'Employee ID' },
-      { value: 1, label: 'Job Title' },
-      { value: 2, label: 'First Name' },
-      { value: 3, label: 'Last Name' },
-      { value: 4, label: 'Email Address' }
-    ]
-})
-
-function addFilter() {
-  // Set company ID and default project ID when adding
-  const filterToAdd = {
-    ...newFilter.value,
+function addViewer() {
+  const viewerToAdd = {
+    ...newViewer.value,
     companyId: props.companyId,
-    projectId: newFilter.value.projectId || props.defaultProjectId
+    projectId: newViewer.value.projectId || props.defaultProjectId
   }
-  emit('update:modelValue', [...props.modelValue, filterToAdd])
-  resetNewFilter()
-  showNewFilter.value = false
+  emit('update:modelValue', [...props.modelValue, viewerToAdd])
+  resetNewViewer()
+  showNewViewer.value = false
 }
 
-function deleteFilter(index: number) {
+function deleteViewer(index: number) {
   const updated = [...props.modelValue]
   updated.splice(index, 1)
   emit('update:modelValue', updated)
 }
 
-function updateFilter(index: number, field: keyof FilterItem, value: any) {
+function updateViewer(index: number, field: keyof ViewerItem, value: any) {
   const updated = [...props.modelValue]
-  updated[index] = { ...updated[index], [field]: value } as FilterItem
+  updated[index] = { ...updated[index], [field]: value } as ViewerItem
   emit('update:modelValue', updated)
 }
 
-function resetNewFilter() {
-  newFilter.value = {
+function resetNewViewer() {
+  newViewer.value = {
     companyId: null,
     projectId: null,
-    type: 0,
-    value: '',
-    include: true
+    type: 'manual',
+    userId: null,
+    firstName: '',
+    lastName: '',
+    email: ''
   }
 }
 
-function toggleNewFilter() {
-  if (!showNewFilter.value) {
-    // When opening, set default project ID
-    newFilter.value.projectId = props.defaultProjectId
+function toggleNewViewer() {
+  if (!showNewViewer.value) {
+    newViewer.value.projectId = props.defaultProjectId
   }
-  showNewFilter.value = !showNewFilter.value
+  showNewViewer.value = !showNewViewer.value
 }
 </script>
 
 <template>
-  <div class="filter-section">
+  <div class="viewer-section">
     <div class="section-header">
-      <h3>{{ title }}</h3>
+      <h3>Contract Viewers</h3>
       <button
-        @click="toggleNewFilter"
+        @click="toggleNewViewer"
         :disabled="!companyId"
         class="btn btn-success btn-small"
         :title="!companyId ? 'Select a company first' : ''"
       >
-        {{ showNewFilter ? 'Cancel' : '+ Add Filter' }}
+        {{ showNewViewer ? 'Cancel' : '+ Add Viewer' }}
       </button>
     </div>
 
     <div class="section-description">
-      Filter company users who will be selectable for signing.
+      Add users who will automatically receive viewer access to all contracts.
     </div>
     
-    <NewFilterForm
-      v-if="showNewFilter"
-      v-model="newFilter"
-      :filter-types="filterTypes"
+    <NewViewerForm
+      v-if="showNewViewer"
+      v-model="newViewer"
       :company-id="companyId"
       :default-project-id="defaultProjectId"
       :get-user-info="getUserInfo"
-      @add="addFilter"
+      @add="addViewer"
     />
     
     <div class="section-list">
-      <FilterItem
-        v-for="(filter, index) in modelValue"
+      <ViewerItem
+        v-for="(viewer, index) in modelValue"
         :key="index"
-        :filter="filter"
-        :filter-types="filterTypes"
+        :viewer="viewer"
         :index="index"
         :company-id="companyId"
         :default-project-id="defaultProjectId"
         :get-user-info="getUserInfo"
-        @update="(field, value) => updateFilter(index, field, value)"
-        @delete="deleteFilter(index)"
+        @update="(field: keyof ViewerItem, value: any) => updateViewer(index, field, value)"
+        @delete="deleteViewer(index)"
       />
       
       <div v-if="modelValue.length === 0" class="empty-state">
-        No user filters configured
+        No viewers configured
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.filter-section {
+.viewer-section {
   display: flex;
   flex-direction: column;
 }
@@ -188,5 +177,5 @@ function toggleNewFilter() {
 </style>
 
 <!-- ========================================
-// END FILE: components/FilterSection.vue
+// END FILE: components/ViewerSection.vue
 ======================================== -->

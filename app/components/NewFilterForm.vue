@@ -2,11 +2,15 @@
 // FILE: components/NewFilterForm.vue
 ======================================== -->
 <script setup lang="ts">
-import type { FilterItem, FilterType } from '~/scripts/models';
+import { ref, onMounted, watch } from 'vue'
+import type { FilterItem, FilterType, Project } from '~/scripts/models';
 
 const props = defineProps<{
   modelValue: FilterItem
   filterTypes: FilterType[]
+  companyId: string | null
+  defaultProjectId: string | null
+  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -14,8 +18,43 @@ const emit = defineEmits<{
   add: []
 }>()
 
+const projects = ref<Project[]>([])
+const loadingProjects = ref(false)
+
+onMounted(async () => {
+  if (props.companyId) {
+    await loadProjects()
+  }
+})
+
+watch(() => props.companyId, async (newCompanyId) => {
+  if (newCompanyId) {
+    await loadProjects()
+  } else {
+    projects.value = []
+  }
+})
+
+async function loadProjects() {
+  if (!props.companyId) return
+  
+  loadingProjects.value = true
+  try {
+    const params = new URLSearchParams({ company_id: props.companyId })
+    const data = await props.getUserInfo('projects', params)
+    projects.value = data
+  } finally {
+    loadingProjects.value = false
+  }
+}
+
 function updateField(field: keyof FilterItem, value: any) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })
+}
+
+function updateProjectId(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  updateField('projectId', value || null)
 }
 </script>
 
@@ -25,14 +64,20 @@ function updateField(field: keyof FilterItem, value: any) {
     
     <div class="form-fields">
       <div class="form-group">
-        <label>Project ID (leave empty for company-wide filtering)</label>
-        <input
-          :value="modelValue.projectId"
-          @input="updateField('projectId', ($event.target as HTMLInputElement).value || null)"
-          type="text"
-          placeholder="Optional"
+        <label>Project (leave empty for company-wide filtering)</label>
+        <select
+          :value="modelValue.projectId || ''"
+          @change="updateProjectId"
+          :disabled="loadingProjects || !companyId"
           class="form-input"
-        />
+        >
+          <option value="">
+            {{ loadingProjects ? 'Loading projects...' : 'Company-wide (all projects)' }}
+          </option>
+          <option v-for="project in projects" :key="project.id" :value="project.id">
+            {{ project.name }}
+          </option>
+        </select>
       </div>
       
       <div class="form-group">
@@ -119,6 +164,12 @@ function updateField(field: keyof FilterItem, value: any) {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.9rem;
+}
+
+.form-input:disabled {
+  background: #e9ecef;
+  cursor: not-allowed;
+  color: #6c757d;
 }
 
 .form-checkbox {

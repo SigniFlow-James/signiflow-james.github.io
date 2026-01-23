@@ -85,14 +85,16 @@ async function getRecipients() {
   }
 
   try {
+    const params = new URLSearchParams({
+      company_id: props.procoreContext.company_id,
+      project_id: props.procoreContext.project_id,
+    })
+
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/recipients',
+      `https://signiflow-procore-backend-net.onrender.com/api/recipients?${params.toString()}`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          context: props.procoreContext
-        })
+        headers: { 'Content-Type': 'application/json' }
       }
     )
     const data = await res.json()
