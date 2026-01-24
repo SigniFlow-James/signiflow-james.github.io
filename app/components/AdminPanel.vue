@@ -3,7 +3,7 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import type { FilterData, ViewerData } from '~/scripts/models'
+import type { FilterData, ViewerData, Company } from '~/scripts/models'
 
 const props = defineProps<{
   backendStatus: any
@@ -14,6 +14,7 @@ const emit = defineEmits<{
   logout: []
 }>()
 
+const companies = ref<Company[]>([])
 const selectedCompanyId = ref<string | null>(null)
 const selectedProjectId = ref<string | null>(null)
 const filters = ref<FilterData>({
@@ -34,8 +35,28 @@ const canSave = computed(() => {
 })
 
 onMounted(async () => {
+  companies.value = await getCompanies()
   await loadFiltersAndViewers()
 })
+
+async function getCompanies() {
+  try {
+    const res = await fetch(
+      `https://signiflow-procore-backend-net.onrender.com/admin/companies`
+    )
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch user info')
+    }
+
+    const data = await res.json()
+    return data.companies || []
+  } catch (err: any) {
+    console.error('Error fetching companies:', err)
+    pageError.value = err.message || 'Failed to fetch companies'
+    return []
+  }
+}
 
 async function getUserInfo() {
   try {
@@ -230,6 +251,7 @@ function closeTestResults() {
 <template>
   <div class="admin-panel">
     <AdminHeader
+      v-model:companies="companies"
       v-model:company-id="selectedCompanyId"
       v-model:project-id="selectedProjectId"
       :loading="loading"

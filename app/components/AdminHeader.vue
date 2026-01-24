@@ -15,6 +15,7 @@ interface Project {
 }
 
 const props = defineProps<{
+  companies: Company[]
   companyId: string | null
   projectId: string | null
   loading: boolean
@@ -30,14 +31,9 @@ const emit = defineEmits<{
   logout: []
 }>()
 
-const companies = ref<Company[]>([])
 const projects = ref<Project[]>([])
 const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
-
-onMounted(async () => {
-  await loadCompanies()
-})
 
 watch(() => props.companyId, async (newCompanyId) => {
   if (newCompanyId) {
@@ -47,16 +43,6 @@ watch(() => props.companyId, async (newCompanyId) => {
     emit('update:projectId', null)
   }
 })
-
-async function loadCompanies() {
-  loadingCompanies.value = true
-  try {
-    const data = await props.getUserInfo('companies')
-    companies.value = data
-  } finally {
-    loadingCompanies.value = false
-  }
-}
 
 async function loadProjects(companyId: string) {
   loadingProjects.value = true
