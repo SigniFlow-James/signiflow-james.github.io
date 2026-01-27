@@ -60,8 +60,17 @@ async function getCompanies() {
 
 async function getUserInfo() {
   try {
+    if (!selectedCompanyId.value) {
+      throw new Error('Company ID is required to fetch user info')
+    }
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/admin/users`
+      'https://signiflow-procore-backend-net.onrender.com/admin/users',
+      {
+        method: 'GET',
+        headers: {
+          'company-id': selectedCompanyId.value,
+        },
+      }
     )
 
     if (!res.ok) {
