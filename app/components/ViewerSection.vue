@@ -10,7 +10,7 @@ const props = defineProps<{
   companyId: string | null
   defaultProjectId: string | null
   projects: Project[]
-  getUserInfo: () => Promise<any[]>
+  getUserInfo: (projectId?: string) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{

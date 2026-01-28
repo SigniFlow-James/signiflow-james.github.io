@@ -10,7 +10,7 @@ const props = defineProps<{
   companyId: string | null
   defaultProjectId: string | null
   projects: Project[]
-  getUserInfo: () => Promise<any[]>
+  getUserInfo: (projectId?: string) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -43,13 +43,8 @@ const isValid = computed(() => {
 })
 
 watch(() => props.modelValue.projectId, async (newProjectId) => {
-  if (newProjectId && props.companyId) {
-    await loadUsers(newProjectId)
-  } else if (props.companyId && props.modelValue.type === 'procore') {
-    // For Procore users without a specific project, we might need to load from a default or all users
-    // This depends on your API - you may need to adjust this logic
-    users.value = []
-    updateField('userId', null)
+  if (props.companyId) {
+    await loadUsers(newProjectId ?? undefined)
   }
 })
 
@@ -64,12 +59,12 @@ watch(() => props.modelValue.type, (newType) => {
   }
 })
 
-async function loadUsers(projectId: string) {
+async function loadUsers(projectId?: string) {
   if (!props.companyId) return
   
   loadingUsers.value = true
   try {
-    const data = await props.getUserInfo()
+    const data = await props.getUserInfo(projectId)
     users.value = data
   } catch (error) {
     console.error('Error loading users:', error)
@@ -134,7 +129,7 @@ function updateRegion(event: Event) {
           @change="updateRegion"
           class="form-input"
         >
-          <option value="">Select a region (optional)</option>
+          <option value="">All Regions</option>
           <option v-for="region in australianRegions" :key="region.value" :value="region.value">
             {{ region.label }}
           </option>
@@ -142,7 +137,7 @@ function updateRegion(event: Event) {
       </div>
 
       <div v-if="!isManual" class="form-group">
-        <label>Project (optional - leave blank for all projects)</label>
+        <label>Project</label>
         <select
           :value="modelValue.projectId || ''"
           @change="updateProjectId"
@@ -161,7 +156,7 @@ function updateRegion(event: Event) {
         <select
           :value="modelValue.userId || ''"
           @change="updateUserId"
-          :disabled="!modelValue.projectId || loadingUsers"
+          :disabled="loadingUsers"
           class="form-input"
         >
           <option value="">

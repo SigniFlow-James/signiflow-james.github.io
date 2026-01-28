@@ -11,7 +11,7 @@ const props = defineProps<{
   companyId: string | null
   defaultProjectId: string | null
   projects: Project[]
-  getUserInfo: () => Promise<any[]>
+  getUserInfo: (projectId?: string) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -56,12 +56,12 @@ watch(() => props.viewer.projectId, async (newProjectId) => {
   }
 })
 
-async function loadUsers(projectId: string) {
+async function loadUsers(projectId?: string) {
   if (!props.companyId) return
   
   loadingUsers.value = true
   try {
-    const data = await props.getUserInfo()
+    const data = await props.getUserInfo(projectId)
     users.value = data
   } catch (error) {
     console.error('Error loading users:', error)

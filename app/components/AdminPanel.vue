@@ -92,7 +92,7 @@ async function getProjects(companyId: string) {
   }
 }
 
-async function getUserInfo() {
+async function getUserInfo(projectId?: string) {
   try {
     if (!selectedCompanyId.value) {
       throw new Error('Company ID is required to fetch user info')
@@ -104,7 +104,7 @@ async function getUserInfo() {
         method: 'GET',
         headers: {
           'company-id': selectedCompanyId.value,
-          'project-id': selectedProjectId.value ?? ''
+          'project-id': projectId ?? ''
         },
       }
     )
