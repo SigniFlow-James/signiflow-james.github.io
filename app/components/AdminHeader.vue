@@ -22,7 +22,6 @@ const emit = defineEmits<{
   logout: []
 }>()
 
-const projects = ref<Project[]>([])
 const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
 
