@@ -42,6 +42,12 @@ const isValid = computed(() => {
   }
 })
 
+onMounted(async () => {
+  if (props.companyId) {
+    await loadUsers()
+  }
+})
+
 watch(() => props.modelValue.projectId, async (newProjectId) => {
   if (props.companyId) {
     await loadUsers(newProjectId ?? undefined)
@@ -160,7 +166,7 @@ function updateRegion(event: Event) {
           class="form-input"
         >
           <option value="">
-            {{ loadingUsers ? 'Loading users...' : modelValue.projectId ? 'Select a user' : 'Select project first' }}
+            {{ loadingUsers ? 'Loading users...' : 'Select a user'}}
           </option>
           <option v-for="user in users" :key="user.employee_id" :value="user.employee_id">
             {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})

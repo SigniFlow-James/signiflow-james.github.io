@@ -37,8 +37,8 @@ const australianRegions = [
 const isManual = computed(() => props.viewer.type === 'manual')
 
 onMounted(async () => {
-  if (props.companyId && props.viewer.projectId) {
-    await loadUsers(props.viewer.projectId)
+  if (props.companyId) {
+    await loadUsers(props.viewer.projectId ?? undefined)
   }
 })
 
