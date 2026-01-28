@@ -260,16 +260,14 @@ async function testRecipients() {
       throw new Error('Please select both a company and project before testing')
     }
 
-    const params = new URLSearchParams({
-      company_id: selectedCompanyId.value,
-      project_id: selectedProjectId.value,
-    })
-
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/api/recipients?${params.toString()}`,
+      `https://signiflow-procore-backend-net.onrender.com/api/recipients`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'company-id': selectedCompanyId.value,
+          'project-id': selectedProjectId.value
+         }
       }
     )
 
