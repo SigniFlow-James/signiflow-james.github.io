@@ -90,7 +90,7 @@ function toggleNewViewer() {
     </div>
 
     <div class="section-description">
-      Add users who will automatically receive viewer access to contracts. Leave project blank for access to all projects.
+      Add users who will automatically receive viewer access to contracts.
     </div>
     
     <NewViewerForm

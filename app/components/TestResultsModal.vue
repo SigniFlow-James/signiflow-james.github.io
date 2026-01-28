@@ -2,8 +2,10 @@
 // FILE: components/TestResultsModal.vue
 ======================================== -->
 <script setup lang="ts">
+import type { Recipient } from '~/scripts/models';
+
 const props = defineProps<{
-  results: any
+  results: Recipient[] | null
   error: string | null
 }>()
 
@@ -21,33 +23,18 @@ const emit = defineEmits<{
           Close
         </button>
       </div>
-      
+
       <div v-if="error" class="error-message">
         {{ error }}
       </div>
-      
+
       <div v-else-if="results">
-        <ResultsTable
-          title="Users"
-          :items="results.users"
-          :columns="[
-            { key: 'employee_id', label: 'Employee ID' },
-            { key: 'name', label: 'Name', computed: (u) => `${u.first_name} ${u.last_name}` },
-            { key: 'job_title', label: 'Job Title' },
-            { key: 'email_address', label: 'Email' }
-          ]"
-        />
-        
-        <ResultsTable
-          title="Vendors"
-          :items="results.vendors"
-          :columns="[
-            { key: 'vendor_id', label: 'Vendor ID' },
-            { key: 'vendor_name', label: 'Vendor Name' },
-            { key: 'contact', label: 'Primary Contact', computed: (v) => `${v.primary_contact_first_name} ${v.primary_contact_last_name}` },
-            { key: 'email_address', label: 'Email' }
-          ]"
-        />
+        <ResultsTable title="Users" :items="results" :columns="[
+          { key: 'employee_id', label: 'Employee ID' },
+          { key: 'name', label: 'Name', computed: (u) => `${u.first_name} ${u.last_name}` },
+          { key: 'job_title', label: 'Job Title' },
+          { key: 'email_address', label: 'Email' }
+        ]" />
       </div>
     </div>
   </div>
