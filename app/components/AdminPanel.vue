@@ -42,7 +42,7 @@ onMounted(async () => {
 
 watch(() => selectedCompanyId.value, async (newCompanyId) => {
   if (newCompanyId) {
-    await getProjects(newCompanyId)
+    projects.value = await getProjects(newCompanyId)
   } else {
     projects.value = []
   }
@@ -84,10 +84,10 @@ async function getProjects(companyId: string) {
     }
 
     const data = await res.json()
-    return data.companies || []
+    return data.projects || []
   } catch (err: any) {
-    console.error('Error fetching companies:', err)
-    pageError.value = err.message || 'Failed to fetch companies'
+    console.error('Error fetching projects:', err)
+    pageError.value = err.message || 'Failed to fetch projects'
     return []
   }
 }
