@@ -31,7 +31,7 @@ function getCellValue(item: any, column: Column) {
           </tr>
         </thead>
         <tbody>
-          <tr v-for="item in items" :key="item.employee_id>
+          <tr v-for="item in items" :key="item.employee_id">
             <td v-for="column in columns" :key="column.key">
               {{ getCellValue(item, column) }}
             </td>
