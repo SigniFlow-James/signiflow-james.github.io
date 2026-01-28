@@ -3,13 +3,14 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref } from 'vue'
-import type { ViewerItem } from '~/scripts/models'
+import type { Project, ViewerItem } from '~/scripts/models'
 
 const props = defineProps<{
   modelValue: ViewerItem[]
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
+  getUserInfo: () => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -20,18 +21,20 @@ const showNewViewer = ref(false)
 const newViewer = ref<ViewerItem>({
   companyId: null,
   projectId: null,
-  type: 'manual',
+  type: 'procore', // Changed default from 'manual' to 'procore'
   userId: null,
   firstName: '',
   lastName: '',
-  email: ''
+  email: '',
+  region: null // Added region field
 })
 
 function addViewer() {
   const viewerToAdd = {
     ...newViewer.value,
     companyId: props.companyId,
-    projectId: newViewer.value.projectId || props.defaultProjectId
+    // projectId can now be null for all projects
+    projectId: newViewer.value.projectId || null
   }
   emit('update:modelValue', [...props.modelValue, viewerToAdd])
   resetNewViewer()
@@ -54,17 +57,19 @@ function resetNewViewer() {
   newViewer.value = {
     companyId: null,
     projectId: null,
-    type: 'manual',
+    type: 'procore', // Changed default from 'manual' to 'procore'
     userId: null,
     firstName: '',
     lastName: '',
-    email: ''
+    email: '',
+    region: null
   }
 }
 
 function toggleNewViewer() {
   if (!showNewViewer.value) {
-    newViewer.value.projectId = props.defaultProjectId
+    // Don't set default project anymore since it's optional
+    newViewer.value.projectId = null
   }
   showNewViewer.value = !showNewViewer.value
 }
@@ -85,7 +90,7 @@ function toggleNewViewer() {
     </div>
 
     <div class="section-description">
-      Add users who will automatically receive viewer access to all contracts.
+      Add users who will automatically receive viewer access to contracts. Leave project blank for access to all projects.
     </div>
     
     <NewViewerForm
@@ -93,6 +98,7 @@ function toggleNewViewer() {
       v-model="newViewer"
       :company-id="companyId"
       :default-project-id="defaultProjectId"
+      :projects="projects"
       :get-user-info="getUserInfo"
       @add="addViewer"
     />
@@ -105,6 +111,7 @@ function toggleNewViewer() {
         :index="index"
         :company-id="companyId"
         :default-project-id="defaultProjectId"
+        :projects="projects"
         :get-user-info="getUserInfo"
         @update="(field: keyof ViewerItem, value: any) => updateViewer(index, field, value)"
         @delete="deleteViewer(index)"

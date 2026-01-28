@@ -80,12 +80,13 @@ export interface FilterData {
 
 export interface ViewerItem {
   companyId: string | null
-  projectId: string | null
+  projectId: string | null  // Now optional - null means all projects
   type: 'manual' | 'procore'
-  userId: string | null  // For Procore users
-  firstName: string      // For manual entry
-  lastName: string       // For manual entry
-  email: string          // For manual entry
+  userId: string | null
+  firstName: string
+  lastName: string
+  email: string
+  region: string | null  // New field for Australian states: NSW, VIC, QLD, SA, WA, TAS, NT, ACT
 }
 
 export interface ViewerData {
@@ -97,16 +98,6 @@ export interface FilterType {
   label: string
 }
 
-export interface Company {
-  id: string
-  name: string
-}
-
-export interface Project {
-  id: string
-  name: string
-}
-
 export interface ProcoreUserRecipient {
   employee_id: string
   job_title: string
@@ -114,6 +105,14 @@ export interface ProcoreUserRecipient {
   last_name: string
   email_address: string
 }
+
+export type AustralianRegion = 'NSW' | 'VIC' | 'QLD' | 'SA' | 'WA' | 'TAS' | 'NT' | 'ACT'
+
+export interface Project {
+  id: string
+  name: string
+}
+
 // ========================================
 // END FILE: scripts/models.ts
 // ========================================

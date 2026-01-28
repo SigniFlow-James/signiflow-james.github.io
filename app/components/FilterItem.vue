@@ -2,7 +2,7 @@
 // FILE: components/FilterItem.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import type { FilterItem, FilterType, Project } from '~/scripts/models'
 
 const props = defineProps<{
@@ -11,7 +11,7 @@ const props = defineProps<{
   index: number
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
 }>()
 
 const emit = defineEmits<{
@@ -19,35 +19,7 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-const projects = ref<Project[]>([])
 const loadingProjects = ref(false)
-
-onMounted(async () => {
-  if (props.companyId) {
-    await loadProjects()
-  }
-})
-
-watch(() => props.companyId, async (newCompanyId) => {
-  if (newCompanyId) {
-    await loadProjects()
-  } else {
-    projects.value = []
-  }
-})
-
-async function loadProjects() {
-  if (!props.companyId) return
-  
-  loadingProjects.value = true
-  try {
-    const params = new URLSearchParams({ company_id: props.companyId })
-    const data = await props.getUserInfo('projects', params)
-    projects.value = data
-  } finally {
-    loadingProjects.value = false
-  }
-}
 
 function updateProjectId(event: Event) {
   const value = (event.target as HTMLSelectElement).value

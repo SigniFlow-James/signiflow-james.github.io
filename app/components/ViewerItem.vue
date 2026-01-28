@@ -10,7 +10,8 @@ const props = defineProps<{
   index: number
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
+  getUserInfo: () => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -18,27 +19,31 @@ const emit = defineEmits<{
   delete: []
 }>()
 
-const projects = ref<Project[]>([])
 const users = ref<ProcoreUserRecipient[]>([])
-const loadingProjects = ref(false)
 const loadingUsers = ref(false)
+
+// Australian states and territories
+const australianRegions = [
+  { value: 'NSW', label: 'New South Wales' },
+  { value: 'VIC', label: 'Victoria' },
+  { value: 'QLD', label: 'Queensland' },
+  { value: 'SA', label: 'South Australia' },
+  { value: 'WA', label: 'Western Australia' },
+  { value: 'TAS', label: 'Tasmania' },
+  { value: 'NT', label: 'Northern Territory' },
+  { value: 'ACT', label: 'Australian Capital Territory' }
+]
 
 const isManual = computed(() => props.viewer.type === 'manual')
 
 onMounted(async () => {
-  if (props.companyId) {
-    await loadProjects()
-    if (props.viewer.projectId) {
-      await loadUsers(props.viewer.projectId)
-    }
+  if (props.companyId && props.viewer.projectId) {
+    await loadUsers(props.viewer.projectId)
   }
 })
 
 watch(() => props.companyId, async (newCompanyId) => {
-  if (newCompanyId) {
-    await loadProjects()
-  } else {
-    projects.value = []
+  if (!newCompanyId) {
     users.value = []
   }
 })
@@ -51,30 +56,16 @@ watch(() => props.viewer.projectId, async (newProjectId) => {
   }
 })
 
-async function loadProjects() {
-  if (!props.companyId) return
-  
-  loadingProjects.value = true
-  try {
-    const params = new URLSearchParams({ company_id: props.companyId })
-    const data = await props.getUserInfo('projects', params)
-    projects.value = data
-  } finally {
-    loadingProjects.value = false
-  }
-}
-
 async function loadUsers(projectId: string) {
   if (!props.companyId) return
   
   loadingUsers.value = true
   try {
-    const params = new URLSearchParams({ 
-      company_id: props.companyId,
-      project_id: projectId
-    })
-    const data = await props.getUserInfo('users', params)
+    const data = await props.getUserInfo()
     users.value = data
+  } catch (error) {
+    console.error('Error loading users:', error)
+    users.value = []
   } finally {
     loadingUsers.value = false
   }
@@ -89,6 +80,11 @@ function updateUserId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   emit('update', 'userId', value || null)
 }
+
+function updateRegion(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  emit('update', 'region', value || null)
+}
 </script>
 
 <template>
@@ -98,6 +94,24 @@ function updateUserId(event: Event) {
         <span :class="['badge', isManual ? 'badge-manual' : 'badge-procore']">
           {{ isManual ? 'Manual Entry' : 'Procore User' }}
         </span>
+        <span v-if="!viewer.projectId" class="badge badge-all-projects">
+          All Projects
+        </span>
+      </div>
+
+      <!-- Region selector for all viewers -->
+      <div class="viewer-field">
+        <label>Region</label>
+        <select
+          :value="viewer.region || ''"
+          @change="updateRegion"
+          class="input-small"
+        >
+          <option value="">No region specified</option>
+          <option v-for="region in australianRegions" :key="region.value" :value="region.value">
+            {{ region.label }}
+          </option>
+        </select>
       </div>
 
       <template v-if="!isManual">
@@ -106,10 +120,10 @@ function updateUserId(event: Event) {
           <select
             :value="viewer.projectId || ''"
             @change="updateProjectId"
-            :disabled="loadingProjects || !companyId"
+            :disabled="!companyId"
             class="input-small"
           >
-            <option value="">Select a project</option>
+            <option value="">All Projects</option>
             <option v-for="project in projects" :key="project.id" :value="project.id">
               {{ project.name }}
             </option>
@@ -188,14 +202,16 @@ function updateUserId(event: Event) {
 
 .viewer-content {
   flex: 1;
-  display
-  : flex;
+  display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
 .viewer-type-badge {
   margin-bottom: 0.25rem;
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .badge {
@@ -215,6 +231,11 @@ function updateUserId(event: Event) {
 .badge-procore {
   background: #f3e5f5;
   color: #7b1fa2;
+}
+
+.badge-all-projects {
+  background: #fff3e0;
+  color: #ef6c00;
 }
 
 .viewer-row {

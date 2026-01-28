@@ -10,7 +10,7 @@ const props = defineProps<{
   filterTypes: FilterType[]
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
 }>()
 
 const emit = defineEmits<{
@@ -18,35 +18,7 @@ const emit = defineEmits<{
   add: []
 }>()
 
-const projects = ref<Project[]>([])
 const loadingProjects = ref(false)
-
-onMounted(async () => {
-  if (props.companyId) {
-    await loadProjects()
-  }
-})
-
-watch(() => props.companyId, async (newCompanyId) => {
-  if (newCompanyId) {
-    await loadProjects()
-  } else {
-    projects.value = []
-  }
-})
-
-async function loadProjects() {
-  if (!props.companyId) return
-  
-  loadingProjects.value = true
-  try {
-    const params = new URLSearchParams({ company_id: props.companyId })
-    const data = await props.getUserInfo('projects', params)
-    projects.value = data
-  } finally {
-    loadingProjects.value = false
-  }
-}
 
 function updateField(field: keyof FilterItem, value: any) {
   emit('update:modelValue', { ...props.modelValue, [field]: value })

@@ -2,14 +2,15 @@
 // FILE: components/NewViewerForm.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from 'vue'
+import { ref, watch, computed } from 'vue'
 import type { ViewerItem, Project, ProcoreUserRecipient } from '~/scripts/models'
 
 const props = defineProps<{
   modelValue: ViewerItem
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
+  getUserInfo: () => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -17,10 +18,20 @@ const emit = defineEmits<{
   add: []
 }>()
 
-const projects = ref<Project[]>([])
 const users = ref<ProcoreUserRecipient[]>([])
-const loadingProjects = ref(false)
 const loadingUsers = ref(false)
+
+// Australian states and territories
+const australianRegions = [
+  { value: 'NSW', label: 'New South Wales' },
+  { value: 'VIC', label: 'Victoria' },
+  { value: 'QLD', label: 'Queensland' },
+  { value: 'SA', label: 'South Australia' },
+  { value: 'WA', label: 'Western Australia' },
+  { value: 'TAS', label: 'Tasmania' },
+  { value: 'NT', label: 'Northern Territory' },
+  { value: 'ACT', label: 'Australian Capital Territory' }
+]
 
 const isManual = computed(() => props.modelValue.type === 'manual')
 const isValid = computed(() => {
@@ -31,28 +42,12 @@ const isValid = computed(() => {
   }
 })
 
-onMounted(async () => {
-  if (props.companyId) {
-    await loadProjects()
-    if (props.defaultProjectId) {
-      await loadUsers(props.defaultProjectId)
-    }
-  }
-})
-
-watch(() => props.companyId, async (newCompanyId) => {
-  if (newCompanyId) {
-    await loadProjects()
-  } else {
-    projects.value = []
-    users.value = []
-  }
-})
-
 watch(() => props.modelValue.projectId, async (newProjectId) => {
   if (newProjectId && props.companyId) {
     await loadUsers(newProjectId)
-  } else {
+  } else if (props.companyId && props.modelValue.type === 'procore') {
+    // For Procore users without a specific project, we might need to load from a default or all users
+    // This depends on your API - you may need to adjust this logic
     users.value = []
     updateField('userId', null)
   }
@@ -69,30 +64,16 @@ watch(() => props.modelValue.type, (newType) => {
   }
 })
 
-async function loadProjects() {
-  if (!props.companyId) return
-  
-  loadingProjects.value = true
-  try {
-    const params = new URLSearchParams({ company_id: props.companyId })
-    const data = await props.getUserInfo('projects', params)
-    projects.value = data
-  } finally {
-    loadingProjects.value = false
-  }
-}
-
 async function loadUsers(projectId: string) {
   if (!props.companyId) return
   
   loadingUsers.value = true
   try {
-    const params = new URLSearchParams({ 
-      company_id: props.companyId,
-      project_id: projectId
-    })
-    const data = await props.getUserInfo('users', params)
+    const data = await props.getUserInfo()
     users.value = data
+  } catch (error) {
+    console.error('Error loading users:', error)
+    users.value = []
   } finally {
     loadingUsers.value = false
   }
@@ -111,6 +92,11 @@ function updateUserId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   updateField('userId', value || null)
 }
+
+function updateRegion(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  updateField('region', value || null)
+}
 </script>
 
 <template>
@@ -124,33 +110,46 @@ function updateUserId(event: Event) {
           <label class="radio-label">
             <input
               type="radio"
-              :checked="modelValue.type === 'manual'"
-              @change="updateField('type', 'manual')"
-            />
-            <span>Manual Entry</span>
-          </label>
-          <label class="radio-label">
-            <input
-              type="radio"
               :checked="modelValue.type === 'procore'"
               @change="updateField('type', 'procore')"
             />
             <span>Procore User</span>
           </label>
+          <label class="radio-label">
+            <input
+              type="radio"
+              :checked="modelValue.type === 'manual'"
+              @change="updateField('type', 'manual')"
+            />
+            <span>Manual Entry</span>
+          </label>
         </div>
       </div>
 
+      <!-- Region dropdown - for all viewer types -->
+      <div class="form-group">
+        <label>Region</label>
+        <select
+          :value="modelValue.region || ''"
+          @change="updateRegion"
+          class="form-input"
+        >
+          <option value="">Select a region (optional)</option>
+          <option v-for="region in australianRegions" :key="region.value" :value="region.value">
+            {{ region.label }}
+          </option>
+        </select>
+      </div>
+
       <div v-if="!isManual" class="form-group">
-        <label>Project (required for Procore users)</label>
+        <label>Project (optional - leave blank for all projects)</label>
         <select
           :value="modelValue.projectId || ''"
           @change="updateProjectId"
-          :disabled="loadingProjects || !companyId"
+          :disabled="!companyId"
           class="form-input"
         >
-          <option value="">
-            {{ loadingProjects ? 'Loading projects...' : 'Select a project' }}
-          </option>
+          <option value="">All Projects</option>
           <option v-for="project in projects" :key="project.id" :value="project.id">
             {{ project.name }}
           </option>

@@ -2,25 +2,16 @@
 // FILE: components/AdminHeader.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
-
-interface Company {
-  id: string
-  name: string
-}
-
-interface Project {
-  id: string
-  name: string
-}
+import { ref, watch } from 'vue'
+import type { Company, Project } from '~/scripts/models'
 
 const props = defineProps<{
   companies: Company[]
+  projects: Project[]
   companyId: string | null
   projectId: string | null
   loading: boolean
   testingRecipients: boolean
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
 }>()
 
 const emit = defineEmits<{
@@ -34,27 +25,6 @@ const emit = defineEmits<{
 const projects = ref<Project[]>([])
 const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
-
-watch(() => props.companyId, async (newCompanyId) => {
-  if (newCompanyId) {
-    await loadProjects(newCompanyId)
-  } else {
-    projects.value = []
-    emit('update:projectId', null)
-  }
-})
-
-async function loadProjects(companyId: string) {
-  loadingProjects.value = true
-  emit('update:projectId', null)
-  try {
-    const params = new URLSearchParams({ company_id: companyId })
-    const data = await props.getUserInfo('projects', params)
-    projects.value = data
-  } finally {
-    loadingProjects.value = false
-  }
-}
 
 function updateCompanyId(event: Event) {
   const value = (event.target as HTMLSelectElement).value

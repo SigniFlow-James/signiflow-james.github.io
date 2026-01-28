@@ -3,14 +3,14 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { FilterItem } from '~/scripts/models';
+import type { FilterItem, Project } from '~/scripts/models';
 
 const props = defineProps<{
   modelValue: FilterItem[]
   title: string
   companyId: string | null
   defaultProjectId: string | null
-  getUserInfo: (endpoint: string, query?: URLSearchParams) => Promise<any[]>
+  projects: Project[]
 }>()
 
 const emit = defineEmits<{
@@ -103,7 +103,7 @@ function toggleNewFilter() {
       :filter-types="filterTypes"
       :company-id="companyId"
       :default-project-id="defaultProjectId"
-      :get-user-info="getUserInfo"
+      :projects="projects"
       @add="addFilter"
     />
     
@@ -116,7 +116,7 @@ function toggleNewFilter() {
         :index="index"
         :company-id="companyId"
         :default-project-id="defaultProjectId"
-        :get-user-info="getUserInfo"
+        :projects="projects"
         @update="(field, value) => updateFilter(index, field, value)"
         @delete="deleteFilter(index)"
       />

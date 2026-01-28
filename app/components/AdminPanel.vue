@@ -3,7 +3,7 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import type { FilterData, ViewerData, Company } from '~/scripts/models'
+import type { FilterData, ViewerData, Company, Project } from '~/scripts/models'
 
 const props = defineProps<{
   backendStatus: any
@@ -15,6 +15,7 @@ const emit = defineEmits<{
 }>()
 
 const companies = ref<Company[]>([])
+const projects = ref<Project[]>([])
 const selectedCompanyId = ref<string | null>(null)
 const selectedProjectId = ref<string | null>(null)
 const filters = ref<FilterData>({
@@ -39,10 +40,37 @@ onMounted(async () => {
   await loadFiltersAndViewers()
 })
 
+watch(() => selectedCompanyId.value, async (newCompanyId) => {
+  if (newCompanyId) {
+    await getProjects(newCompanyId)
+  } else {
+    projects.value = []
+  }
+})
+
 async function getCompanies() {
   try {
     const res = await fetch(
       `https://signiflow-procore-backend-net.onrender.com/admin/companies`
+    )
+
+    if (!res.ok) {
+      throw new Error('Failed to fetch user info')
+    }
+
+    const data = await res.json()
+    return data.companies || []
+  } catch (err: any) {
+    console.error('Error fetching companies:', err)
+    pageError.value = err.message || 'Failed to fetch companies'
+    return []
+  }
+}
+
+async function getProjects(companyId: string) {
+  try {
+    const res = await fetch(
+      `https://signiflow-procore-backend-net.onrender.com/admin/`
     )
 
     if (!res.ok) {
@@ -70,6 +98,7 @@ async function getUserInfo() {
         method: 'GET',
         headers: {
           'company-id': selectedCompanyId.value,
+          'project-id': selectedProjectId.value ?? ''
         },
       }
     )
@@ -262,11 +291,11 @@ function closeTestResults() {
   <div class="admin-panel">
     <AdminHeader
       v-model:companies="companies"
+      v-model:projects="projects"
       v-model:company-id="selectedCompanyId"
       v-model:project-id="selectedProjectId"
       :loading="loading"
       :testing-recipients="testingRecipients"
-      :get-user-info="getUserInfo"
       @link-auth="linkAuth"
       @test-recipients="testRecipients"
       @logout="emit('logout')"
@@ -292,13 +321,14 @@ function closeTestResults() {
         title="User Filters" 
         :company-id="selectedCompanyId"
         :default-project-id="selectedProjectId"
-        :get-user-info="getUserInfo"
+        :projects="projects"
       />
 
       <ViewerSection
         v-model="viewers.viewers"
         :company-id="selectedCompanyId"
         :default-project-id="selectedProjectId"
+        :projects="projects"
         :get-user-info="getUserInfo"
       />
     </div>
@@ -392,19 +422,4 @@ function closeTestResults() {
 
 <!-- ========================================
 // END FILE: components/AdminPanel.vue
-======================================== -->
-
-
-
-
-
-
-
-<!-- ========================================
-// FILE: scripts/models.ts
-======================================== -->
-
-
-<!-- ========================================
-// END FILE: scripts/models.ts
 ======================================== -->
