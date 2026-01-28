@@ -70,7 +70,13 @@ async function getCompanies() {
 async function getProjects(companyId: string) {
   try {
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/admin/`
+      `https://signiflow-procore-backend-net.onrender.com/admin/projects`
+      , {
+        method: 'GET',
+        headers: {
+          'company-id': companyId
+        },
+      }
     )
 
     if (!res.ok) {
