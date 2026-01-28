@@ -107,7 +107,7 @@ function updateRegion(event: Event) {
           @change="updateRegion"
           class="input-small"
         >
-          <option value="">No region specified</option>
+          <option value="">All Regions</option>
           <option v-for="region in australianRegions" :key="region.value" :value="region.value">
             {{ region.label }}
           </option>
@@ -135,11 +135,11 @@ function updateRegion(event: Event) {
           <select
             :value="viewer.userId || ''"
             @change="updateUserId"
-            :disabled="!viewer.projectId || loadingUsers"
+            :disabled="loadingUsers"
             class="input-small"
           >
             <option value="">
-              {{ loadingUsers ? 'Loading...' : viewer.projectId ? 'Select a user' : 'Select project first' }}
+              {{ loadingUsers ? 'Loading...' : 'Select a user' }}
             </option>
             <option v-for="user in users" :key="user.employee_id" :value="user.employee_id">
               {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})

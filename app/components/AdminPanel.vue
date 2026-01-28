@@ -344,7 +344,7 @@ function closeTestResults() {
         class="btn btn-primary btn-large"
         :title="!selectedCompanyId ? 'Select a company first' : ''"
       >
-        {{ loading ? 'Saving...' : 'Save All Configuration' }}
+        {{ loading ? 'Saving...' : `Save ${companies.find(c => c.id === selectedCompanyId)?.name} Configuration` }}
       </button>
     </div>
 
