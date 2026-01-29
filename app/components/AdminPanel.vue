@@ -3,10 +3,10 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue'
-import type { FilterData, ViewerData, Company, Project } from '~/scripts/models'
+import type { FilterData, ViewerData, Company, Project, BackendStatus } from '~/scripts/models'
 
 const props = defineProps<{
-  backendStatus: any
+  backendStatus: BackendStatus | null
   error: string | null
 }>()
 
@@ -16,8 +16,8 @@ const emit = defineEmits<{
 
 const companies = ref<Company[]>([])
 const projects = ref<Project[]>([])
-const selectedCompanyId = ref<string | null>(null)
-const selectedProjectId = ref<string | null>(null)
+const selectedCompany = ref<Company | null>(null)
+const selectedProject = ref<Project | null>(null)
 const filters = ref<FilterData>({
   filters: []
 })
@@ -32,7 +32,7 @@ const testResults = ref<any>(null)
 const testError = ref<string | null>(null)
 
 const canSave = computed(() => {
-  return selectedCompanyId.value !== null && !loading.value
+  return selectedCompany.value?.id !== null && !loading.value
 })
 
 onMounted(async () => {
@@ -40,11 +40,10 @@ onMounted(async () => {
   await loadFiltersAndViewers()
 })
 
-watch(() => selectedCompanyId.value, async (newCompanyId) => {
-  if (newCompanyId) {
-    projects.value = await getProjects(newCompanyId)
-  } else {
-    projects.value = []
+watch(() => selectedCompany.value, async (newCompany) => {
+  projects.value = []
+  if (newCompany) {
+    projects.value = await getProjects(newCompany.id)
   }
 })
 
@@ -94,7 +93,7 @@ async function getProjects(companyId: string) {
 
 async function getUserInfo(projectId?: string) {
   try {
-    if (!selectedCompanyId.value) {
+    if (!selectedCompany.value?.id) {
       throw new Error('Company ID is required to fetch user info')
     }
     
@@ -103,7 +102,7 @@ async function getUserInfo(projectId?: string) {
       {
         method: 'GET',
         headers: {
-          'company-id': selectedCompanyId.value,
+          'company-id': selectedCompany.value?.id,
           'project-id': projectId ?? ''
         },
       }
@@ -161,7 +160,7 @@ async function linkAuth() {
 }
 
 async function saveFilters() {
-  if (!selectedCompanyId.value) {
+  if (!selectedCompany.value) {
     pageError.value = 'Please select a company before saving filters'
     return
   }
@@ -173,7 +172,7 @@ async function saveFilters() {
   try {
     // Add company ID to all filters before saving
     const filtersWithCompany = {
-      filters: filters.value.filters.map(f => ({ ...f, companyId: selectedCompanyId.value }))
+      filters: filters.value.filters.map(f => ({ ...f, companyId: selectedCompany.value!.id }))
     }
 
     const res = await fetch(
@@ -200,7 +199,7 @@ async function saveFilters() {
 }
 
 async function saveViewers() {
-  if (!selectedCompanyId.value) {
+  if (!selectedCompany.value) {
     pageError.value = 'Please select a company before saving viewers'
     return
   }
@@ -212,7 +211,7 @@ async function saveViewers() {
   try {
     // Add company ID to all viewers before saving
     const viewersWithCompany = {
-      viewers: viewers.value.viewers.map(v => ({ ...v, companyId: selectedCompanyId.value }))
+      viewers: viewers.value.viewers.map(v => ({ ...v, companyId: selectedCompany.value!.id }))
     }
 
     const res = await fetch(
@@ -239,15 +238,13 @@ async function saveViewers() {
 }
 
 async function saveAll() {
-  if (!selectedCompanyId.value) {
+  if (!selectedCompany.value) {
     pageError.value = 'Please select a company before saving'
     return
   }
 
   await saveFilters()
-  if (!pageError.value) {
-    await saveViewers()
-  }
+  await saveViewers()
 }
 
 async function testRecipients() {
@@ -256,7 +253,7 @@ async function testRecipients() {
   testResults.value = null
 
   try {
-    if (!selectedCompanyId.value || !selectedProjectId.value) {
+    if (!selectedCompany.value || !selectedProject.value) {
       throw new Error('Please select both a company and project before testing')
     }
 
@@ -265,8 +262,8 @@ async function testRecipients() {
       {
         method: 'GET',
         headers: { 
-          'company-id': selectedCompanyId.value,
-          'project-id': selectedProjectId.value
+          'company-id': selectedCompany.value.id,
+          'project-id': selectedProject.value.id
          }
       }
     )
@@ -296,8 +293,8 @@ function closeTestResults() {
     <AdminHeader
       v-model:companies="companies"
       v-model:projects="projects"
-      v-model:company-id="selectedCompanyId"
-      v-model:project-id="selectedProjectId"
+      v-model:company="selectedCompany"
+      v-model:project="selectedProject"
       :loading="loading"
       :testing-recipients="testingRecipients"
       @link-auth="linkAuth"
@@ -311,7 +308,7 @@ function closeTestResults() {
       Configuration saved successfully!
     </div>
 
-    <div v-if="!selectedCompanyId" class="warning-message">
+    <div v-if="!selectedCompany" class="warning-message">
       Please select a company to configure filters and viewers
     </div>
 
@@ -323,15 +320,15 @@ function closeTestResults() {
       <FilterSection 
         v-model="filters.filters" 
         title="User Filters" 
-        :company-id="selectedCompanyId"
-        :default-project-id="selectedProjectId"
+        :company-id="selectedCompany?.id ?? null"
+        :default-project-id="selectedProject?.id ?? null"
         :projects="projects"
       />
 
       <ViewerSection
         v-model="viewers.viewers"
-        :company-id="selectedCompanyId"
-        :default-project-id="selectedProjectId"
+        :company-id="selectedCompany?.id ?? null"
+        :default-project-id="selectedProject?.id ?? null"
         :projects="projects"
         :get-user-info="getUserInfo"
       />
@@ -342,9 +339,9 @@ function closeTestResults() {
         @click="saveAll" 
         :disabled="!canSave" 
         class="btn btn-primary btn-large"
-        :title="!selectedCompanyId ? 'Select a company first' : ''"
+        :title="!selectedCompany ? 'Select a company first' : ''"
       >
-        {{ loading ? 'Saving...' : `Save ${companies.find(c => c.id === selectedCompanyId)?.name} Configuration` }}
+        {{ loading ? 'Saving...' : `Save ${selectedCompany?.name} Configuration` }}
       </button>
     </div>
 

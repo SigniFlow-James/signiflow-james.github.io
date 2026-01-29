@@ -8,15 +8,15 @@ import type { Company, Project } from '~/scripts/models'
 const props = defineProps<{
   companies: Company[]
   projects: Project[]
-  companyId: string | null
-  projectId: string | null
+  company: Company | null
+  project: Project | null
   loading: boolean
   testingRecipients: boolean
 }>()
 
 const emit = defineEmits<{
-  'update:companyId': [value: string | null]
-  'update:projectId': [value: string | null]
+  'update:company': [value: Company | null]
+  'update:project': [value: Project | null]
   linkAuth: []
   testRecipients: []
   logout: []
@@ -27,13 +27,23 @@ const loadingProjects = ref(false)
 
 function updateCompanyId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-  emit('update:companyId', value || null)
+
+  const company =
+    value ? props.companies.find(c => c.id === value) ?? null : null
+
+  emit('update:company', company)
 }
+
 
 function updateProjectId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-  emit('update:projectId', value || null)
+
+  const project =
+    value ? props.projects.find(p => p.id === value) ?? null : null
+
+  emit('update:project', project)
 }
+
 </script>
 
 <template>
@@ -45,7 +55,7 @@ function updateProjectId(event: Event) {
           <label for="company-select">Company:</label>
           <select
             id="company-select"
-            :value="companyId || ''"
+            :value="company?.id || ''"
             @change="updateCompanyId"
             :disabled="loadingCompanies"
             class="toolbar-select"
@@ -63,13 +73,13 @@ function updateProjectId(event: Event) {
           <label for="project-select">Project:</label>
           <select
             id="project-select"
-            :value="projectId || ''"
+            :value="project?.id || ''"
             @change="updateProjectId"
-            :disabled="!companyId || loadingProjects"
+            :disabled="!company?.id || loadingProjects"
             class="toolbar-select"
           >
             <option value="">
-              {{ loadingProjects ? 'Loading projects...' : companyId ? 'Select a project' : 'Select company first' }}
+              {{ loadingProjects ? 'Loading projects...' : company?.id ? 'Select a project' : 'Select company first' }}
             </option>
             <option v-for="project in projects" :key="project.id" :value="project.id">
               {{ project.name }}
@@ -85,9 +95,9 @@ function updateProjectId(event: Event) {
       </button>
       <button 
         @click="emit('testRecipients')" 
-        :disabled="testingRecipients || !companyId || !projectId" 
+        :disabled="testingRecipients || !company?.id || !project?.id" 
         class="btn btn-info"
-        :title="!companyId || !projectId ? 'Select company and project first' : ''"
+        :title="!company?.id || !project?.id ? 'Select company and project first' : ''"
       >
         {{ testingRecipients ? 'Testing...' : 'Test Recipients' }}
       </button>

@@ -5,7 +5,7 @@ import { ref } from 'vue'
 import type { BackendStatus } from './models'
 
 export function useBackendAuth() {
-  const backendStatus = ref<null | BackendStatus>(null)
+  const backendStatus = ref<BackendStatus | null>(null)
   const error = ref<string | null>(null)
 
   function fetchBackendStatus(): boolean {

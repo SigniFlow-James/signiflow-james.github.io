@@ -3,9 +3,10 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref } from 'vue'
+import type { BackendStatus } from '~/scripts/models';
 
 const props = defineProps<{
-  backendStatus: any
+  backendStatus: BackendStatus | null
   error: string | null
 }>()
 
@@ -53,56 +54,35 @@ function handleLogout() {
 <template>
   <div>
     <SigniflowHeader />
-    
+
     <div v-if="!isLoggedIn" style="max-width: 400px; margin: 2rem auto;">
       <h2 style="margin-bottom: 1.5rem; text-align: center;">Procore Integration Admin Portal</h2>
-      
+
       <ErrorMessage v-if="loginError" :message="loginError" />
-      
+
       <form @submit.prevent="handleLogin">
         <div>
           <label for="username">
             Username
           </label>
-          <input
-            id="username"
-            v-model="loginForm.username"
-            type="text"
-            required
-            class="form-input"
-          />
+          <input id="username" v-model="loginForm.username" type="text" required class="form-input" />
         </div>
-        
+
         <div>
           <label for="password">
             Password
           </label>
-          <input
-            id="password"
-            v-model="loginForm.password"
-            type="password"
-            required
-            class="form-input"
-          />
+          <input id="password" v-model="loginForm.password" type="password" required class="form-input" />
         </div>
         <div>
-          <button
-          type="submit"
-          :disabled="loggingIn || !loginForm.username || !loginForm.password"
-          class="styled-btn"
-        >
-          {{ loggingIn ? 'Logging in...' : 'Login' }}
-        </button>
+          <button type="submit" :disabled="loggingIn || !loginForm.username || !loginForm.password" class="styled-btn">
+            {{ loggingIn ? 'Logging in...' : 'Login' }}
+          </button>
         </div>
       </form>
     </div>
-    
-    <AdminPanel 
-      v-else
-      :backend-status="backendStatus"
-      :error="error"
-      @logout="handleLogout"
-    />
+
+    <AdminPanel v-else :backend-status="backendStatus" :error="error" @logout="handleLogout" />
   </div>
 </template>
 

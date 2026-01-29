@@ -2,7 +2,7 @@
 // FILE: components/NewFilterForm.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, watch } from 'vue'
+import { ref } from 'vue'
 import type { FilterItem, FilterType, Project } from '~/scripts/models';
 
 const props = defineProps<{
