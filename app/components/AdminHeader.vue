@@ -60,7 +60,7 @@ function updateProject(event: Event) {
             class="toolbar-select"
           >
             <option value="">
-              {{ loadingCompanies ? 'Loading companies...' : 'Select a company' }}
+              {{ loadingCompanies ? 'Loading companies...' : 'All companies and projects' }}
             </option>
             <option v-for="company in companies" :key="company.id" :value="company.id">
               {{ company.name }}

@@ -25,6 +25,7 @@ const viewers = ref<ViewerData>({
   viewers: []
 })
 const loading = ref(false)
+const saving = ref(false)
 const pageError = ref<string | null>(null)
 const saveSuccess = ref(false)
 const testingRecipients = ref(false)
@@ -32,19 +33,22 @@ const testResults = ref<any>(null)
 const testError = ref<string | null>(null)
 
 const canSave = computed(() => {
-  return selectedCompany.value?.id !== null && !loading.value
+  return !loading.value && !saving.value
 })
 
 onMounted(async () => {
   companies.value = await getCompanies()
-  await loadFiltersAndViewers()
 })
 
 watch(() => selectedCompany.value, async (newCompany) => {
   selectedProject.value = null  // Clear project when company changes
   projects.value = []
   if (newCompany) {
+    await loadFiltersAndViewers(newCompany.id)
     projects.value = await getProjects(newCompany.id)
+  }
+  else {
+    await loadFiltersAndViewers("all")
   }
 })
 
@@ -89,10 +93,14 @@ async function getProjects(companyId: string) {
     }
 
     const data = await res.json()
-    return (data.projects ?? []).map((c: any) => ({
-      ...c,
-      id: String(c.id),
-    }))
+    return (data.projects ?? []).map(
+      (c: any) => (
+        {
+          ...c,
+          id: String(c.id),
+        }
+      )
+    )
   } catch (err: any) {
     console.error('Error fetching projects:', err)
     pageError.value = err.message || 'Failed to fetch projects'
@@ -131,13 +139,17 @@ async function getUserInfo(projectId?: string) {
   }
 }
 
-async function loadFiltersAndViewers() {
+async function loadFiltersAndViewers(companyId: string) {
   loading.value = true
   pageError.value = null
 
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/dashboard'
+      'https://signiflow-procore-backend-net.onrender.com/admin/dashboard',
+      {
+        method: 'GET',
+        headers: { 'company-id': companyId },
+      }
     )
 
     if (!res.ok) {
@@ -169,92 +181,61 @@ async function linkAuth() {
   }
 }
 
-async function saveFilters() {
-  if (!selectedCompany.value) {
-    pageError.value = 'Please select a company before saving filters'
-    return
-  }
+async function saveDashboardData(target: 'filters' | 'viewers') {
+  let companyId = selectedCompany.value?.id ?? 'all'
 
   loading.value = true
+  saving.value = true
   pageError.value = null
   saveSuccess.value = false
 
   try {
-    // Add company ID to all filters before saving
-    const filtersWithCompany = {
-      filters: filters.value.filters.map(f => ({ ...f, companyId: selectedCompany.value!.id }))
-    }
+    const payload =
+      target === 'filters'
+        ? {
+            filters: filters.value.filters.map(f => ({
+              ...f,
+              companyId,
+            })),
+          }
+        : {
+            viewers: viewers.value.viewers.map(v => ({
+              ...v,
+              companyId,
+            })),
+          }
 
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/filters',
+      `https://signiflow-procore-backend-net.onrender.com/admin/${target}`,
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(filtersWithCompany)
+        headers: {
+          'company-id': companyId,
+        },
+        body: JSON.stringify(payload),
       }
     )
 
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.error || 'Failed to save filters')
+      throw new Error(data.error || `Failed to save ${target}`)
     }
 
     saveSuccess.value = true
-    setTimeout(() => { saveSuccess.value = false }, 3000)
+    setTimeout(() => {
+      saveSuccess.value = false
+    }, 3000)
   } catch (err: any) {
-    pageError.value = err.message || 'Failed to save filters'
+    pageError.value = err.message || `Failed to save ${target}`
   } finally {
     loading.value = false
-  }
-}
-
-async function saveViewers() {
-  if (!selectedCompany.value) {
-    pageError.value = 'Please select a company before saving viewers'
-    return
-  }
-
-  loading.value = true
-  pageError.value = null
-  saveSuccess.value = false
-
-  try {
-    // Add company ID to all viewers before saving
-    const viewersWithCompany = {
-      viewers: viewers.value.viewers.map(v => ({ ...v, companyId: selectedCompany.value!.id }))
-    }
-
-    const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/viewers',
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(viewersWithCompany)
-      }
-    )
-
-    if (!res.ok) {
-      const data = await res.json()
-      throw new Error(data.error || 'Failed to save viewers')
-    }
-
-    saveSuccess.value = true
-    setTimeout(() => { saveSuccess.value = false }, 3000)
-  } catch (err: any) {
-    pageError.value = err.message || 'Failed to save viewers'
-  } finally {
-    loading.value = false
+    saving.value = false
   }
 }
 
 async function saveAll() {
-  if (!selectedCompany.value) {
-    pageError.value = 'Please select a company before saving'
-    return
-  }
-
-  await saveFilters()
-  await saveViewers()
+  await saveDashboardData('filters')
+  await saveDashboardData('viewers')
 }
 
 async function testRecipients() {
@@ -310,9 +291,9 @@ function closeTestResults() {
       Configuration saved successfully!
     </div>
 
-    <div v-if="!selectedCompany" class="warning-message">
+    <!-- <div v-if="!selectedCompany" class="warning-message">
       Please select a company to configure filters and viewers
-    </div>
+    </div> -->
 
     <div v-if="loading && !testingRecipients" class="loading-message">
       Loading configuration...
@@ -329,7 +310,7 @@ function closeTestResults() {
     <div class="save-section">
       <button @click="saveAll" :disabled="!canSave" class="btn btn-primary btn-large"
         :title="!selectedCompany ? 'Select a company first' : ''">
-        {{ loading ? 'Saving...' : `Save Configuration for ${selectedCompany?.name ?? 'Company'}` }}
+        {{ saving ? 'Saving...' : loading ? 'Loading...' : `Save Configuration for ${selectedCompany?.name ?? 'Company'}` }}
       </button>
     </div>
 
