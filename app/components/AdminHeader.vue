@@ -26,6 +26,7 @@ const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
 
 function updateCompany(event: Event) {
+  console.log('updateCompany called')
   const value = (event.target as HTMLSelectElement).value
   const tCompany =
     value ? props.companies.find(c => c.id === value) ?? null : null
