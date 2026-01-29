@@ -2,7 +2,7 @@
 // FILE: components/AdminPanel.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import type { FilterData, ViewerData, Company, Project, BackendStatus } from '~/scripts/models'
 
 const props = defineProps<{
@@ -41,6 +41,7 @@ onMounted(async () => {
 })
 
 watch(() => selectedCompany.value, async (newCompany) => {
+  selectedProject.value = null  // Clear project when company changes
   projects.value = []
   if (newCompany) {
     projects.value = await getProjects(newCompany.id)
@@ -54,7 +55,7 @@ async function getCompanies() {
     )
 
     if (!res.ok) {
-      throw new Error('Failed to fetch user info')
+      throw new Error('Failed to fetch companies')
     }
 
     const data = await res.json()
@@ -69,8 +70,8 @@ async function getCompanies() {
 async function getProjects(companyId: string) {
   try {
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/admin/projects`
-      , {
+      `https://signiflow-procore-backend-net.onrender.com/admin/projects`,
+      {
         method: 'GET',
         headers: {
           'company-id': companyId
@@ -79,7 +80,7 @@ async function getProjects(companyId: string) {
     )
 
     if (!res.ok) {
-      throw new Error('Failed to fetch user info')
+      throw new Error('Failed to fetch projects')
     }
 
     const data = await res.json()
@@ -91,7 +92,7 @@ async function getProjects(companyId: string) {
   }
 }
 
-async function getUserInfo(projectId?: string) {
+async function getUserInfo() {
   try {
     if (!selectedCompany.value?.id) {
       throw new Error('Company ID is required to fetch user info')
@@ -102,8 +103,8 @@ async function getUserInfo(projectId?: string) {
       {
         method: 'GET',
         headers: {
-          'company-id': selectedCompany.value?.id,
-          'project-id': projectId ?? ''
+          'company-id': selectedCompany.value.id,
+          'project-id': selectedProject.value?.id ?? ''
         },
       }
     )
@@ -291,8 +292,8 @@ function closeTestResults() {
 <template>
   <div class="admin-panel">
     <AdminHeader
-      v-model:companies="companies"
-      v-model:projects="projects"
+      :companies="companies"
+      :projects="projects"
       v-model:company="selectedCompany"
       v-model:project="selectedProject"
       :loading="loading"
@@ -341,7 +342,7 @@ function closeTestResults() {
         class="btn btn-primary btn-large"
         :title="!selectedCompany ? 'Select a company first' : ''"
       >
-        {{ loading ? 'Saving...' : `Save ${selectedCompany?.name} Configuration` }}
+        {{ loading ? 'Saving...' : `Save ${selectedCompany?.name ?? 'Company'} Configuration` }}
       </button>
     </div>
 

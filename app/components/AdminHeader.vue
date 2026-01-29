@@ -2,7 +2,7 @@
 // FILE: components/AdminHeader.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref } from 'vue'
 import type { Company, Project } from '~/scripts/models'
 
 const props = defineProps<{
@@ -25,23 +25,19 @@ const emit = defineEmits<{
 const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
 
-function updateCompanyId(event: Event) {
+function updateCompany(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-
-  const company =
+  const tCompany =
     value ? props.companies.find(c => c.id === value) ?? null : null
-
-  emit('update:company', company)
+  emit('update:company', tCompany)
 }
 
 
-function updateProjectId(event: Event) {
+function updateProject(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-
-  const project =
+  const tProject =
     value ? props.projects.find(p => p.id === value) ?? null : null
-
-  emit('update:project', project)
+  emit('update:project', tProject)
 }
 
 </script>
@@ -56,7 +52,7 @@ function updateProjectId(event: Event) {
           <select
             id="company-select"
             :value="company?.id || ''"
-            @change="updateCompanyId"
+            @change="updateCompany"
             :disabled="loadingCompanies"
             class="toolbar-select"
           >
@@ -74,7 +70,7 @@ function updateProjectId(event: Event) {
           <select
             id="project-select"
             :value="project?.id || ''"
-            @change="updateProjectId"
+            @change="updateProject"
             :disabled="!company?.id || loadingProjects"
             class="toolbar-select"
           >
