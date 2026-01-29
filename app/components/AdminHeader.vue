@@ -26,10 +26,10 @@ const loadingCompanies = ref(false)
 const loadingProjects = ref(false)
 
 function updateCompany(event: Event) {
-  console.log('updateCompany called')
   const value = (event.target as HTMLSelectElement).value
   const tCompany =
     value ? props.companies.find(c => c.id === value) ?? null : null
+  console.log('Selected company:', tCompany)
   emit('update:company', tCompany)
 }
 
@@ -52,7 +52,7 @@ function updateProject(event: Event) {
           <label for="company-select">Company:</label>
           <select
             id="company-select"
-            :value="company?.id || ''"
+            :value="company || {}"
             @change="updateCompany"
             :disabled="loadingCompanies"
             class="toolbar-select"
