@@ -24,7 +24,7 @@ const selected = computed<Recipient | null>({
 });
 
 function displayName(recipient: Recipient) {
-  return `${recipient.First} ${recipient.Last}`;
+  return `${recipient.firstNames} ${recipient.lastName}`;
 }
 
 // Filter recipients based on search query
@@ -76,7 +76,7 @@ function handleBlur() {
     <div v-if="isOpen" class="dropdown-list">
       <div
         v-for="recipient in filteredRecipients"
-        :key="recipient.Email"
+        :key="recipient.email"
         class="dropdown-item"
         @mousedown="selectRecipient(recipient)"
       >

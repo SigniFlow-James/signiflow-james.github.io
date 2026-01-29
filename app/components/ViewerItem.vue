@@ -49,8 +49,8 @@ watch(() => props.companyId, async (newCompanyId) => {
 })
 
 watch(() => props.viewer.projectId, async (newProjectId) => {
-  if (newProjectId && props.companyId) {
-    await loadUsers(newProjectId)
+  if (props.companyId) {
+    await loadUsers(newProjectId ?? undefined)
   } else {
     users.value = []
   }
@@ -78,12 +78,34 @@ function updateProjectId(event: Event) {
 
 function updateUserId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-  emit('update', 'userId', value || null)
+  if (!value) {
+    emit('update', 'recipient', { userId: '', firstNames: '', lastName: '', email: '' })
+    return
+  }
+  
+  // Find the selected user and populate all recipient fields
+  const selectedUser = users.value.find(u => u.id === value)
+  if (selectedUser) {
+    emit('update', 'recipient', {
+      userId: selectedUser.id,
+      firstNames: selectedUser.first_name,
+      lastName: selectedUser.last_name,
+      email: selectedUser.email_address
+    })
+  }
 }
 
 function updateRegion(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   emit('update', 'region', value || null)
+}
+
+function updateRecipientField(field: 'firstNames' | 'lastName' | 'email', value: string) {
+  const currentRecipient = props.viewer.recipient || { userId: '', firstNames: '', lastName: '', email: '' }
+  emit('update', 'recipient', {
+    ...currentRecipient,
+    [field]: value
+  })
 }
 </script>
 
@@ -96,6 +118,9 @@ function updateRegion(event: Event) {
         </span>
         <span v-if="!viewer.projectId" class="badge badge-all-projects">
           All Projects
+        </span>
+        <span v-if="viewer.region" class="badge badge-region">
+          {{ viewer.region }}
         </span>
       </div>
 
@@ -133,7 +158,7 @@ function updateRegion(event: Event) {
         <div class="viewer-field">
           <label>Procore User</label>
           <select
-            :value="viewer.userId || ''"
+            :value="viewer.recipient?.userId || ''"
             @change="updateUserId"
             :disabled="loadingUsers"
             class="input-small"
@@ -141,7 +166,7 @@ function updateRegion(event: Event) {
             <option value="">
               {{ loadingUsers ? 'Loading...' : 'Select a user' }}
             </option>
-            <option v-for="user in users" :key="user.employee_id" :value="user.employee_id">
+            <option v-for="user in users" :key="user.id" :value="user.id">
               {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})
             </option>
           </select>
@@ -153,8 +178,8 @@ function updateRegion(event: Event) {
           <div class="viewer-field">
             <label>First Name</label>
             <input
-              :value="viewer.firstName"
-              @input="emit('update', 'firstName', ($event.target as HTMLInputElement).value)"
+              :value="viewer.recipient?.firstNames || ''"
+              @input="updateRecipientField('firstNames', ($event.target as HTMLInputElement).value)"
               type="text"
               class="input-small"
             />
@@ -163,8 +188,8 @@ function updateRegion(event: Event) {
           <div class="viewer-field">
             <label>Last Name</label>
             <input
-              :value="viewer.lastName"
-              @input="emit('update', 'lastName', ($event.target as HTMLInputElement).value)"
+              :value="viewer.recipient?.lastName || ''"
+              @input="updateRecipientField('lastName', ($event.target as HTMLInputElement).value)"
               type="text"
               class="input-small"
             />
@@ -174,8 +199,8 @@ function updateRegion(event: Event) {
         <div class="viewer-field">
           <label>Email Address</label>
           <input
-            :value="viewer.email"
-            @input="emit('update', 'email', ($event.target as HTMLInputElement).value)"
+            :value="viewer.recipient?.email || ''"
+            @input="updateRecipientField('email', ($event.target as HTMLInputElement).value)"
             type="email"
             class="input-small"
           />
@@ -236,6 +261,11 @@ function updateRegion(event: Event) {
 .badge-all-projects {
   background: #fff3e0;
   color: #ef6c00;
+}
+
+.badge-region {
+  background: #e8f5e9;
+  color: #2e7d32;
 }
 
 .viewer-row {

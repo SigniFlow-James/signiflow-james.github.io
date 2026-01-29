@@ -36,9 +36,10 @@ export interface FilterType {
 
 // Recipients / Forms
 export interface Recipient {
-  First: string
-  Last: string
-  Email: string
+  userId: string,
+  firstNames: string
+  lastName: string
+  email: string
 }
 
 export interface FormData {
@@ -82,10 +83,7 @@ export interface ViewerItem {
   companyId: string | null
   projectId: string | null  // Now optional - null means all projects
   type: 'manual' | 'procore'
-  userId: string | null
-  firstName: string
-  lastName: string
-  email: string
+  recipient?: Recipient
   region: string | null  // New field for Australian states: NSW, VIC, QLD, SA, WA, TAS, NT, ACT
 }
 
@@ -99,6 +97,7 @@ export interface FilterType {
 }
 
 export interface ProcoreUserRecipient {
+  id: string
   employee_id: string
   job_title: string
   first_name: string

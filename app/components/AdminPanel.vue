@@ -51,7 +51,7 @@ watch(() => selectedCompany.value, async (newCompany) => {
 async function getCompanies() {
   try {
     const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/admin/companies`
+      'https://signiflow-procore-backend-net.onrender.com/admin/companies'
     )
 
     if (!res.ok) {
@@ -59,13 +59,18 @@ async function getCompanies() {
     }
 
     const data = await res.json()
-    return data.companies || []
+
+    return (data.companies ?? []).map((c: any) => ({
+      ...c,
+      id: String(c.id),
+    }))
   } catch (err: any) {
     console.error('Error fetching companies:', err)
     pageError.value = err.message || 'Failed to fetch companies'
     return []
   }
 }
+
 
 async function getProjects(companyId: string) {
   try {
@@ -84,7 +89,10 @@ async function getProjects(companyId: string) {
     }
 
     const data = await res.json()
-    return data.projects || []
+    return (data.projects ?? []).map((c: any) => ({
+      ...c,
+      id: String(c.id),
+    }))
   } catch (err: any) {
     console.error('Error fetching projects:', err)
     pageError.value = err.message || 'Failed to fetch projects'
@@ -92,19 +100,19 @@ async function getProjects(companyId: string) {
   }
 }
 
-async function getUserInfo() {
+async function getUserInfo(projectId?: string) {
   try {
     if (!selectedCompany.value?.id) {
       throw new Error('Company ID is required to fetch user info')
     }
-    
+
     const res = await fetch(
       'https://signiflow-procore-backend-net.onrender.com/admin/users',
       {
         method: 'GET',
         headers: {
           'company-id': selectedCompany.value.id,
-          'project-id': selectedProject.value?.id ?? ''
+          'project-id': projectId ?? ''
         },
       }
     )
@@ -114,6 +122,7 @@ async function getUserInfo() {
     }
 
     const data = await res.json()
+    console.log('Fetched user info:', data)
     return data.value || []
   } catch (err: any) {
     console.error('Error fetching user info:', err)
@@ -262,10 +271,10 @@ async function testRecipients() {
       `https://signiflow-procore-backend-net.onrender.com/api/recipients`,
       {
         method: 'GET',
-        headers: { 
+        headers: {
           'company-id': selectedCompany.value.id,
           'project-id': selectedProject.value.id
-         }
+        }
       }
     )
 
@@ -291,17 +300,9 @@ function closeTestResults() {
 
 <template>
   <div class="admin-panel">
-    <AdminHeader
-      :companies="companies"
-      :projects="projects"
-      v-model:company="selectedCompany"
-      v-model:project="selectedProject"
-      :loading="loading"
-      :testing-recipients="testingRecipients"
-      @link-auth="linkAuth"
-      @test-recipients="testRecipients"
-      @logout="emit('logout')"
-    />
+    <AdminHeader :companies="companies" :projects="projects" v-model:company="selectedCompany"
+      v-model:project="selectedProject" :loading="loading" :testing-recipients="testingRecipients" @link-auth="linkAuth"
+      @test-recipients="testRecipients" @logout="emit('logout')" />
 
     <ErrorMessage v-if="pageError" :message="pageError" />
 
@@ -318,40 +319,22 @@ function closeTestResults() {
     </div>
 
     <div v-else class="filters-grid">
-      <FilterSection 
-        v-model="filters.filters" 
-        title="User Filters" 
-        :company-id="selectedCompany?.id ?? null"
-        :default-project-id="selectedProject?.id ?? null"
-        :projects="projects"
-      />
+      <FilterSection v-model="filters.filters" title="User Filters" :company-id="selectedCompany?.id ?? null"
+        :default-project-id="selectedProject?.id ?? null" :projects="projects" />
 
-      <ViewerSection
-        v-model="viewers.viewers"
-        :company-id="selectedCompany?.id ?? null"
-        :default-project-id="selectedProject?.id ?? null"
-        :projects="projects"
-        :get-user-info="getUserInfo"
-      />
+      <ViewerSection v-model="viewers.viewers" :company-id="selectedCompany?.id ?? null"
+        :default-project-id="selectedProject?.id ?? null" :projects="projects" :get-user-info="getUserInfo" />
     </div>
 
     <div class="save-section">
-      <button 
-        @click="saveAll" 
-        :disabled="!canSave" 
-        class="btn btn-primary btn-large"
-        :title="!selectedCompany ? 'Select a company first' : ''"
-      >
-        {{ loading ? 'Saving...' : `Save ${selectedCompany?.name ?? 'Company'} Configuration` }}
+      <button @click="saveAll" :disabled="!canSave" class="btn btn-primary btn-large"
+        :title="!selectedCompany ? 'Select a company first' : ''">
+        {{ loading ? 'Saving...' : `Save Configuration for ${selectedCompany?.name ?? 'Company'}` }}
       </button>
     </div>
 
-    <TestResultsModal 
-      v-if="testResults || testError" 
-      :results="testResults" 
-      :error="testError"
-      @close="closeTestResults" 
-    />
+    <TestResultsModal v-if="testResults || testError" :results="testResults" :error="testError"
+      @close="closeTestResults" />
   </div>
 </template>
 

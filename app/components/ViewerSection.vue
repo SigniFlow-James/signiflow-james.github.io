@@ -21,19 +21,20 @@ const showNewViewer = ref(false)
 const newViewer = ref<ViewerItem>({
   companyId: null,
   projectId: null,
-  type: 'procore', // Changed default from 'manual' to 'procore'
-  userId: null,
-  firstName: '',
-  lastName: '',
-  email: '',
-  region: null // Added region field
+  type: 'procore',
+  recipient: {
+    userId: '',
+    firstNames: '',
+    lastName: '',
+    email: ''
+  },
+  region: null
 })
 
 function addViewer() {
   const viewerToAdd = {
     ...newViewer.value,
     companyId: props.companyId,
-    // projectId can now be null for all projects
     projectId: newViewer.value.projectId || null
   }
   emit('update:modelValue', [...props.modelValue, viewerToAdd])
@@ -57,11 +58,13 @@ function resetNewViewer() {
   newViewer.value = {
     companyId: null,
     projectId: null,
-    type: 'procore', // Changed default from 'manual' to 'procore'
-    userId: null,
-    firstName: '',
-    lastName: '',
-    email: '',
+    type: 'procore',
+    recipient: {
+      userId: '',
+      firstNames: '',
+      lastName: '',
+      email: ''
+    },
     region: null
   }
 }
@@ -79,12 +82,8 @@ function toggleNewViewer() {
   <div class="viewer-section">
     <div class="section-header">
       <h3>Contract Viewers</h3>
-      <button
-        @click="toggleNewViewer"
-        :disabled="!companyId"
-        class="btn btn-success btn-small"
-        :title="!companyId ? 'Select a company first' : ''"
-      >
+      <button @click="toggleNewViewer" :disabled="!companyId" class="btn btn-success btn-small"
+        :title="!companyId ? 'Select a company first' : ''">
         {{ showNewViewer ? 'Cancel' : '+ Add Viewer' }}
       </button>
     </div>
@@ -92,31 +91,16 @@ function toggleNewViewer() {
     <div class="section-description">
       Add users who will automatically receive viewer access to contracts.
     </div>
-    
-    <NewViewerForm
-      v-if="showNewViewer"
-      v-model="newViewer"
-      :company-id="companyId"
-      :default-project-id="defaultProjectId"
-      :projects="projects"
-      :get-user-info="getUserInfo"
-      @add="addViewer"
-    />
-    
+
+    <NewViewerForm v-if="showNewViewer" v-model="newViewer" :company-id="companyId"
+      :default-project-id="defaultProjectId" :projects="projects" :get-user-info="getUserInfo" @add="addViewer" />
+
     <div class="section-list">
-      <ViewerItem
-        v-for="(viewer, index) in modelValue"
-        :key="index"
-        :viewer="viewer"
-        :index="index"
-        :company-id="companyId"
-        :default-project-id="defaultProjectId"
-        :projects="projects"
-        :get-user-info="getUserInfo"
+      <ViewerItem v-for="(viewer, index) in modelValue" :key="index" :viewer="viewer" :index="index"
+        :company-id="companyId" :default-project-id="defaultProjectId" :projects="projects" :get-user-info="getUserInfo"
         @update="(field: keyof ViewerItem, value: any) => updateViewer(index, field, value)"
-        @delete="deleteViewer(index)"
-      />
-      
+        @delete="deleteViewer(index)" />
+
       <div v-if="modelValue.length === 0" class="empty-state">
         No viewers configured
       </div>

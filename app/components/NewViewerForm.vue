@@ -2,7 +2,7 @@
 // FILE: components/NewViewerForm.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, watch, computed } from 'vue'
+import { ref, watch, computed, onMounted } from 'vue'
 import type { ViewerItem, Project, ProcoreUserRecipient } from '~/scripts/models'
 
 const props = defineProps<{
@@ -36,9 +36,13 @@ const australianRegions = [
 const isManual = computed(() => props.modelValue.type === 'manual')
 const isValid = computed(() => {
   if (isManual.value) {
-    return !!(props.modelValue.firstName && props.modelValue.lastName && props.modelValue.email)
+    return !!(
+      props.modelValue.recipient?.firstNames && 
+      props.modelValue.recipient?.lastName && 
+      props.modelValue.recipient?.email
+    )
   } else {
-    return !!props.modelValue.userId
+    return !!props.modelValue.recipient?.firstNames
   }
 })
 
@@ -49,25 +53,18 @@ onMounted(async () => {
 })
 
 watch(() => props.modelValue.projectId, async (newProjectId) => {
+  console.log('Project ID changed to:', newProjectId)
   if (props.companyId) {
     await loadUsers(newProjectId ?? undefined)
   }
 })
 
-watch(() => props.modelValue.type, (newType) => {
-  // Clear fields when switching types
-  if (newType === 'manual') {
-    updateField('userId', null)
-  } else {
-    updateField('firstName', '')
-    updateField('lastName', '')
-    updateField('email', '')
-  }
+watch(() => props.modelValue.type, (_) => {
+  updateField('recipient', { userId: '', firstNames: '', lastName: '', email: '' })
 })
 
 async function loadUsers(projectId?: string) {
   if (!props.companyId) return
-  
   loadingUsers.value = true
   try {
     const data = await props.getUserInfo(projectId)
@@ -91,7 +88,22 @@ function updateProjectId(event: Event) {
 
 function updateUserId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
-  updateField('userId', value || null)
+  console.log('Selected user ID:', value)
+  if (!value) {
+    updateField('recipient', { userId: '', firstNames: '', lastName: '', email: '' })
+    return
+  }
+  
+  // Find the selected user and populate all recipient fields
+  const selectedUser = users.value.find(u => u.id === value)
+  if (selectedUser) {
+    updateField('recipient', {
+      userId: selectedUser.id,
+      firstNames: selectedUser.first_name,
+      lastName: selectedUser.last_name,
+      email: selectedUser.email_address
+    })
+  }
 }
 
 function updateRegion(event: Event) {
@@ -160,7 +172,7 @@ function updateRegion(event: Event) {
       <div v-if="!isManual" class="form-group">
         <label>Procore User</label>
         <select
-          :value="modelValue.userId || ''"
+          :value="modelValue.recipient?.userId || ''"
           @change="updateUserId"
           :disabled="loadingUsers"
           class="form-input"
@@ -168,7 +180,7 @@ function updateRegion(event: Event) {
           <option value="">
             {{ loadingUsers ? 'Loading users...' : 'Select a user'}}
           </option>
-          <option v-for="user in users" :key="user.employee_id" :value="user.employee_id">
+          <option v-for="user in users" :key="user.id" :value="user.id">
             {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})
           </option>
         </select>
@@ -179,8 +191,11 @@ function updateRegion(event: Event) {
           <div class="form-group">
             <label>First Name</label>
             <input
-              :value="modelValue.firstName"
-              @input="updateField('firstName', ($event.target as HTMLInputElement).value)"
+              :value="modelValue.recipient?.firstNames || ''"
+              @input="updateField('recipient', { 
+                ...modelValue.recipient, 
+                firstNames: ($event.target as HTMLInputElement).value 
+              })"
               type="text"
               placeholder="First name"
               class="form-input"
@@ -190,8 +205,11 @@ function updateRegion(event: Event) {
           <div class="form-group">
             <label>Last Name</label>
             <input
-              :value="modelValue.lastName"
-              @input="updateField('lastName', ($event.target as HTMLInputElement).value)"
+              :value="modelValue.recipient?.lastName || ''"
+              @input="updateField('recipient', { 
+                ...modelValue.recipient, 
+                lastName: ($event.target as HTMLInputElement).value 
+              })"
               type="text"
               placeholder="Last name"
               class="form-input"
@@ -202,8 +220,11 @@ function updateRegion(event: Event) {
         <div class="form-group">
           <label>Email Address</label>
           <input
-            :value="modelValue.email"
-            @input="updateField('email', ($event.target as HTMLInputElement).value)"
+            :value="modelValue.recipient?.email || ''"
+            @input="updateField('recipient', { 
+              ...modelValue.recipient, 
+              email: ($event.target as HTMLInputElement).value 
+            })"
             type="email"
             placeholder="email@example.com"
             class="form-input"
