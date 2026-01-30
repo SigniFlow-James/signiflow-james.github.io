@@ -205,7 +205,9 @@ onMounted(async () => {
         @submit="sendToBackend" 
       />
 
-      <div hidden="true">
+      <div 
+      hidden="false"
+      >
         <DebugPanel 
           v-model:enabled="debugEnabled" 
           :backend-status="backendStatus" 
