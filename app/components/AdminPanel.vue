@@ -304,7 +304,7 @@ async function testRecipients() {
     const data = await res.json()
     updateToken(data.token)
 
-    testResults.value = data
+    testResults.value = data.signers
   } catch (err: any) {
     testError.value = err.message || 'Failed to test recipients'
   } finally {

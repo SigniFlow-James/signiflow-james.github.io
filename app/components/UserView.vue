@@ -179,12 +179,7 @@ const displayError = computed(() => props.error || localError.value)
 
 onMounted(async () => {
   await handleInit()
-})
-
-watch(authToken, async (newToken) => {
-  if (newToken) {
-    await getRecipients()
-  }
+  if (authToken.value) getRecipients()
 })
 </script>
 
