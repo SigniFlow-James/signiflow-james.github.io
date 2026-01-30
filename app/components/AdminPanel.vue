@@ -325,7 +325,7 @@ function closeTestResults() {
       @oauth-complete="handleOAuthComplete" @test-recipients="testRecipients" @logout="emit('logout')" />
 
     <Transition name="notice">
-      <ErrorMessage v-if="pageError" :message="pageError" />
+      <ErrorMessage v-if="pageError" :message="pageError" :duration="5000" />
     </Transition>
 
     <Transition name="notice" appear>

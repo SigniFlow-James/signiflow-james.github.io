@@ -123,7 +123,7 @@ onMounted(async () => {
       <SigniflowHeader />
       <h2 style="margin-bottom: 1.5rem; text-align: center;">Procore Integration Admin Portal</h2>
 
-      <ErrorMessage v-if="loginError" :message="loginError" :duration="3" />
+      <ErrorMessage v-if="loginError" :message="loginError" :duration="5000" />
 
       <form @submit.prevent="handleLogin">
         <div>
