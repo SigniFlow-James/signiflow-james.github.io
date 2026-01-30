@@ -21,6 +21,12 @@ const loginForm = ref({
 const loginError = ref<string | null>(null)
 const loggingIn = ref(false)
 
+function updateToken(token?: string) {
+  if (token) {
+      authToken.value = token
+    }
+}
+
 async function handleLogin() {
   loginError.value = null
   loggingIn.value = true
@@ -43,10 +49,7 @@ async function handleLogin() {
     }
     
     const data = await res.json()
-    if (data.token) {
-      authToken.value = data.token
-    }
-    console.log(data.token)
+    updateToken(data.token)
 
     isLoggedIn.value = true
   } catch (err: any) {
@@ -82,9 +85,7 @@ async function handleTokenLogin() {
     }
     
     const data = await res.json()
-    if (data.token) {
-      authToken.value = data.token
-    }
+    updateToken(data.token)
 
     isLoggedIn.value = true
   } catch (err: any) {
