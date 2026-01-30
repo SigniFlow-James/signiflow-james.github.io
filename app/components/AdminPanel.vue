@@ -4,18 +4,17 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import type { FilterData, ViewerData, Company, Project, BackendStatus } from '~/scripts/models'
-import { getAuthCookie, setAuthCookie } from '~/scripts/cookies';
 
 const props = defineProps<{
   backendStatus: BackendStatus | null
   error: string | null
+  authToken: string
 }>()
 
 const emit = defineEmits<{
   logout: []
+  'update:authToken': [token: string]
 }>()
-
-
 
 const companies = ref<Company[]>([])
 const projects = ref<Project[]>([])
@@ -40,6 +39,13 @@ const canSave = computed(() => {
   return !loading.value && !saving.value
 })
 
+function updateToken(response: Response) {
+  const token = response.headers.get('token')
+  if (token) {
+    emit('update:authToken', token)
+  }
+}
+
 onMounted(async () => {
   companies.value = await getCompanies()
 })
@@ -63,7 +69,7 @@ async function getCompanies() {
       {
         method: 'GET',
         headers: {
-          'bearer-token': getAuthCookie() ?? ''
+          'bearer-token': props.authToken
         },
       }
     )
@@ -71,7 +77,8 @@ async function getCompanies() {
     if (!res.ok) {
       throw new Error('Failed to fetch companies')
     }
-    setAuthCookie(res.headers.get('token'))
+    
+    updateToken(res)
 
     const data = await res.json()
     return (data.companies ?? []).map((c: any) => ({
@@ -85,16 +92,15 @@ async function getCompanies() {
   }
 }
 
-
-async function getProjects(companyId: string) {
+async function getProjects(companyId: string | number) {
   try {
     const res = await fetch(
       `https://signiflow-procore-backend-net.onrender.com/admin/projects`,
       {
         method: 'GET',
         headers: {
-          'company-id': companyId,
-          'bearer-token': getAuthCookie() ?? ''
+          'company-id': String(companyId),
+          'bearer-token': props.authToken
         },
       }
     )
@@ -102,16 +108,15 @@ async function getProjects(companyId: string) {
     if (!res.ok) {
       throw new Error('Failed to fetch projects')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    updateToken(res)
 
     const data = await res.json()
     return (data.projects ?? []).map(
-      (c: any) => (
-        {
-          ...c,
-          id: String(c.id),
-        }
-      )
+      (c: any) => ({
+        ...c,
+        id: String(c.id),
+      })
     )
   } catch (err: any) {
     console.error('Error fetching projects:', err)
@@ -131,9 +136,9 @@ async function getUserInfo(projectId?: string) {
       {
         method: 'GET',
         headers: {
-          'company-id': selectedCompany.value.id,
-          'project-id': projectId ?? '',
-          'bearer-token': getAuthCookie() ?? ''
+          'company-id': String(selectedCompany.value.id),
+          'project-id': projectId ? String(projectId) : '',
+          'bearer-token': props.authToken
         },
       }
     )
@@ -141,7 +146,8 @@ async function getUserInfo(projectId?: string) {
     if (!res.ok) {
       throw new Error('Failed to fetch user info')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    updateToken(res)
 
     const data = await res.json()
     console.log('Fetched user info:', data)
@@ -164,7 +170,7 @@ async function loadFiltersAndViewers(companyId: string) {
         method: 'GET',
         headers: {
           'company-id': companyId,
-          'bearer-token': getAuthCookie() ?? ''
+          'bearer-token': props.authToken
         },
       }
     )
@@ -172,7 +178,8 @@ async function loadFiltersAndViewers(companyId: string) {
     if (!res.ok) {
       throw new Error('Failed to load dashboard data')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    updateToken(res)
 
     const data = await res.json()
     filters.value = {
@@ -226,13 +233,13 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
         ? {
           filters: filters.value.filters.map(f => ({
             ...f,
-            companyId,
+            companyId: String(companyId),
           })),
         }
         : {
           viewers: viewers.value.viewers.map(v => ({
             ...v,
-            companyId,
+            companyId: String(companyId),
           })),
         }
 
@@ -241,8 +248,9 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
       {
         method: 'POST',
         headers: {
-          'company-id': companyId,
-          'bearer-token': getAuthCookie() ?? ''
+          'Content-Type': 'application/json',
+          'company-id': String(companyId),
+          'bearer-token': props.authToken
         },
         body: JSON.stringify(payload),
       }
@@ -252,7 +260,8 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
       const data = await res.json()
       throw new Error(data.error || `Failed to save ${target}`)
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    updateToken(res)
 
     saveSuccess.value = true
     setTimeout(() => {
@@ -286,9 +295,9 @@ async function testRecipients() {
       {
         method: 'GET',
         headers: {
-          'company-id': selectedCompany.value.id,
-          'project-id': selectedProject.value.id,
-          'bearer-token': getAuthCookie() ?? ''
+          'company-id': String(selectedCompany.value.id),
+          'project-id': String(selectedProject.value.id),
+          'bearer-token': props.authToken
         }
       }
     )
@@ -297,7 +306,8 @@ async function testRecipients() {
       const data = await res.json()
       throw new Error(data.error || 'Failed to fetch recipients')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    updateToken(res)
 
     const data = await res.json()
     testResults.value = data
@@ -341,11 +351,11 @@ function closeTestResults() {
     </div>
 
     <div v-else class="filters-grid">
-      <FilterSection v-model="filters.filters" title="User Filters" :company-id="selectedCompany?.id ?? null"
-        :default-project-id="selectedProject?.id ?? null" :projects="projects" />
+      <FilterSection v-model="filters.filters" title="User Filters" :company-id="selectedCompany?.id ? String(selectedCompany.id) : null"
+        :default-project-id="selectedProject?.id ? String(selectedProject.id) : null" :projects="projects" />
 
-      <ViewerSection v-model="viewers.viewers" :company-id="selectedCompany?.id ?? null"
-        :default-project-id="selectedProject?.id ?? null" :projects="projects" :get-user-info="getUserInfo" />
+      <ViewerSection v-model="viewers.viewers" :company-id="selectedCompany?.id ? String(selectedCompany.id) : null"
+        :default-project-id="selectedProject?.id ? String(selectedProject.id) : null" :projects="projects" :get-user-info="getUserInfo" />
     </div>
 
     <div class="save-section">
@@ -391,8 +401,7 @@ function closeTestResults() {
   font-size: 1rem;
 }
 
-.success-message,
-.warning-message {
+.success-message {
   position: fixed;
   top: 20px;
   left: 50%;
@@ -403,18 +412,9 @@ function closeTestResults() {
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   min-width: 300px;
   text-align: center;
-}
-
-.success-message {
   background: #d4edda;
   color: #155724;
   border: 1px solid #c3e6cb;
-}
-
-.warning-message {
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
 }
 
 .notice-enter-active,
@@ -433,42 +433,6 @@ function closeTestResults() {
   opacity: 1;
   transform: translate(-50%, 0);
 }
-
-/* .notice-enter-active,
-.notice-leave-active {
-  transition: opacity 0.25s ease, transform 0.25s ease;
-}
-
-.notice-enter-from,
-.notice-leave-to {
-  opacity: 0;
-  transform: translateY(-8px);
-}
-
-.notice-enter-to,
-.notice-leave-from {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.success-message {
-  padding: 1rem;
-  background: #d4edda;
-  color: #155724;
-  border: 1px solid #c3e6cb;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-}
-
-.warning-message {
-  padding: 1rem;
-  background: #fff3cd;
-  color: #856404;
-  border: 1px solid #ffeaa7;
-  border-radius: 4px;
-  margin-bottom: 1rem;
-  text-align: center;
-} */
 
 .loading-message {
   text-align: center;

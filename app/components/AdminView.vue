@@ -4,13 +4,13 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { BackendStatus } from '~/scripts/models';
-import { getAuthCookie, setAuthCookie } from '~/scripts/cookies';
 
 const props = defineProps<{
   backendStatus: BackendStatus | null
   error: string | null
 }>()
 
+const authToken = ref<string>('')
 const isLoggedIn = ref(false)
 const loginForm = ref({
   username: '',
@@ -29,6 +29,9 @@ async function handleLogin() {
       'https://signiflow-procore-backend-net.onrender.com/admin/login',
       {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify(loginForm.value)
       }
     )
@@ -37,7 +40,11 @@ async function handleLogin() {
       const data = await res.json()
       throw new Error(data.error || 'Login failed')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    const token = res.headers.get('token')
+    if (token) {
+      authToken.value = token
+    }
 
     isLoggedIn.value = true
   } catch (err: any) {
@@ -48,9 +55,10 @@ async function handleLogin() {
 }
 
 async function handleTokenLogin() {
-  if (getAuthCookie() == null) {
-      return
+  if (!authToken.value) {
+    return
   }
+  
   loginError.value = null
   loggingIn.value = true
 
@@ -60,7 +68,7 @@ async function handleTokenLogin() {
       {
         method: 'POST',
         headers: { 
-          'bearer-token': getAuthCookie() ?? ''
+          'bearer-token': authToken.value
         },
       }
     )
@@ -69,11 +77,16 @@ async function handleTokenLogin() {
       const data = await res.json()
       throw new Error(data.error || 'Login failed')
     }
-    setAuthCookie(res.headers.get('token')) 
+    
+    const token = res.headers.get('token')
+    if (token) {
+      authToken.value = token
+    }
 
     isLoggedIn.value = true
   } catch (err: any) {
     loginError.value = err.message || 'Login failed'
+    authToken.value = ''
   } finally {
     loggingIn.value = false
   }
@@ -81,19 +94,20 @@ async function handleTokenLogin() {
 
 function handleLogout() {
   isLoggedIn.value = false
+  authToken.value = ''
   loginForm.value = { username: '', password: '' }
 }
 
 onMounted(async () => {
-
-  handleTokenLogin()
+  // Try to login with existing token if available
+  await handleTokenLogin()
 })
-
 </script>
 
 <template>
   <div>
     <div v-if="!isLoggedIn" style="max-width: 400px; margin: 2rem auto;">
+      <SigniflowHeader />
       <h2 style="margin-bottom: 1.5rem; text-align: center;">Procore Integration Admin Portal</h2>
 
       <ErrorMessage v-if="loginError" :message="loginError" />
@@ -120,7 +134,13 @@ onMounted(async () => {
       </form>
     </div>
 
-    <AdminPanel v-else :backend-status="backendStatus" :error="error" @logout="handleLogout" />
+    <AdminPanel 
+      v-else 
+      :backend-status="backendStatus" 
+      :error="error" 
+      v-model:auth-token="authToken" 
+      @logout="handleLogout" 
+    />
   </div>
 </template>
 
