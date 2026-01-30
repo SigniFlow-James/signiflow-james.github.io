@@ -3,7 +3,7 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import type { Recipient, BackendStatus, } from '~/scripts/models';
+import type { Recipient, BackendStatus } from '~/scripts/models';
 
 const props = defineProps<{
   procoreContext: any
@@ -11,6 +11,7 @@ const props = defineProps<{
   error: string | null
 }>()
 
+const authToken = ref<string | null>(null)
 const debugEnabled = ref(false)
 const sending = ref(false)
 const sendResult = ref<string | null>(null)
@@ -46,10 +47,10 @@ async function sendToBackend() {
       'https://signiflow-procore-backend-net.onrender.com/api/send',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'bearer-token': authToken.value ?? '' },
         body: JSON.stringify({
           form: form.value,
-          context: props.procoreContext
+          context: props.procoreContext,
         })
       }
     )
@@ -67,13 +68,55 @@ async function sendToBackend() {
   }
 }
 
+async function handleInit() {
+  localError.value = null
+  sending.value = true
+  if (
+    !isAuthenticated.value &&
+    (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
+  ) {
+    localError.value = 'Not authenticated with backend'
+    sending.value = false
+    return
+  }
+  try {
+    const res = await fetch(
+      'https://signiflow-procore-backend-net.onrender.com/api/init',
+      {
+        method: 'POST',
+        headers: {
+          'company-id': props.procoreContext.company_id,
+          'project-id': props.procoreContext.project_id,
+          'object-id': props.procoreContext.object_id
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || data.message || 'An error has occured. Please try again.')
+    }
+
+    const data = await res.json()
+    if (data.token) {
+      authToken.value = data.token
+    }
+    console.log(data.token)
+  } catch (err: any) {
+    localError.value = err.message || 'An error has occured. Please try again.'
+  } finally {
+    sending.value = false
+  }
+}
+
 onMounted(() => {
-  getRecipients()
+  handleInit()
+  if (authToken.value) getRecipients()
 })
 
 async function getRecipients() {
   localError.value = null
-
+  sending.value = true
   if (
     !isAuthenticated.value &&
     (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
@@ -84,13 +127,14 @@ async function getRecipients() {
   }
 
   try {
-        const res = await fetch(
+    const res = await fetch(
       `https://signiflow-procore-backend-net.onrender.com/api/recipients`,
       {
         method: 'GET',
-        headers: { 
+        headers: {
           'company-id': props.procoreContext.company_id,
-          'project-id': props.procoreContext.project_id
+          'project-id': props.procoreContext.project_id,
+          'bearer-token': authToken.value ?? ''
         }
       }
     )
@@ -122,7 +166,7 @@ const displayError = computed(() => props.error || localError.value)
     <SigniflowForm v-model:form="form" :procoreContext="procoreContext"
       :generalContractorSigners="generalContractorSigners" :sending="sending" :send-result="sendResult"
       @submit="sendToBackend" />
-      
+
     <div hidden="true">
       <DebugPanel v-model:enabled="debugEnabled" :backendStatus="backendStatus" :procoreContext="procoreContext"
         :error="displayError" />

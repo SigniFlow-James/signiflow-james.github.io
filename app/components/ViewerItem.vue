@@ -313,6 +313,7 @@ function updateRecipientField(field: 'firstNames' | 'lastName' | 'email', value:
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 .input-small:disabled {

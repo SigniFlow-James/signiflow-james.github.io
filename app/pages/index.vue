@@ -16,10 +16,6 @@ const isLoadedInProcore = computed(() => {
 
 onMounted(() => {
   console.log('--- Signiflow app mounted ---')
-  console.log('window.location.href:', window.location.href)
-  console.log('window.self === window.top:', window.self === window.top)
-  console.log('window.self === window.parent:', window.self === window.parent)
-
   try {
     console.log('window.parent.location:', window.parent.location.href)
   } catch {

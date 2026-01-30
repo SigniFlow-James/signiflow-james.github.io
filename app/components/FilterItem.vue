@@ -108,7 +108,7 @@ function updateProjectId(event: Event) {
 
 .filter-row {
   display: flex;
-  gap: 1rem;
+  gap: 0.75rem;
   margin-bottom: 0.5rem;
 }
 
@@ -131,6 +131,7 @@ function updateProjectId(event: Event) {
   border: 1px solid #ccc;
   border-radius: 4px;
   font-size: 0.9rem;
+  box-sizing: border-box;
 }
 
 .input-small:disabled {

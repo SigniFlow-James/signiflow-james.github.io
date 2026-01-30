@@ -8,34 +8,33 @@ export function useProcoreContext() {
 
   function initializeProcoreListener() {
     if (!document.referrer) {
-      console.warn('No document.referrer; cannot open message listener')
+      // console.warn('No document.referrer; cannot open message listener')
       procoreContext.value = "App not loaded inside Procore iframe"
       return
     }
 
     window.addEventListener('message', (event) => {
       if (event.source === window.self) {
-        console.log('⛔ Ignoring self-sent message')
         return
       }
       
-      console.group('📨 postMessage received')
-      console.log('origin:', event.origin)
-      console.log('source === window.parent:', event.source === window.parent)
-      console.log('raw data:', event.data)
-      console.groupEnd()
+      // console.group('📨 postMessage received')
+      // console.log('origin:', event.origin)
+      // console.log('source === window.parent:', event.source === window.parent)
+      // console.log('raw data:', event.data)
+      // console.groupEnd()
 
       if (
         event.data?.type === 'context' ||
         event.data?.type === 'setup'
       ) {
-        console.log('✅ Procore context detected')
+        // console.log('✅ Procore context detected')
         procoreContext.value = event.data.context ?? event.data.payload ?? event.data
       }
     })
     
-    console.log('--- message listener attached ---')
-    console.log(`--- sending initialiser to ${document.referrer} ---`)
+    // console.log('--- message listener attached ---')
+    // console.log(`--- sending initialiser to ${document.referrer} ---`)
     
     window.parent.postMessage(
       { type: 'initialize' },
