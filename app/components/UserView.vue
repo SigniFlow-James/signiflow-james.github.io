@@ -28,53 +28,7 @@ const form = ref({
 const isAuthenticated = computed(
   () => props.backendStatus?.authenticated === true
 )
-
-async function sendToBackend() {
-  localError.value = null
-  sendResult.value = null
-  sending.value = true
-
-  if (
-    !isAuthenticated.value &&
-    (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
-  ) {
-    localError.value = 'Not authenticated with backend'
-    sending.value = false
-    return
-  }
-
-  try {
-    const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/api/send',
-      {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'bearer-token': authToken.value ?? '' 
-        },
-        body: JSON.stringify({
-          form: form.value,
-          context: props.procoreContext,
-        })
-      }
-    )
-    const data = await res.json()
-    if (!res.ok) {
-      localError.value = `Error sending to backend: HTTP ${res.status}`
-      throw new Error(`${data.error ?? `HTTP ${res.status}`}`)
-    }
-
-    if (data.token) {
-      authToken.value = data.token
-    }
-
-    sendResult.value = 'Sent successfully'
-  } catch (err: any) {
-    sendResult.value = err.message ?? 'Send failed'
-  } finally {
-    sending.value = false
-  }
-}
+const displayError = computed(() => props.error || localError.value)
 
 async function handleInit() {
   localError.value = null
@@ -175,7 +129,51 @@ async function getRecipients() {
   }
 }
 
-const displayError = computed(() => props.error || localError.value)
+async function sendToBackend() {
+  localError.value = null
+  sendResult.value = null
+  sending.value = true
+
+  if (
+    !isAuthenticated.value &&
+    (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
+  ) {
+    localError.value = 'Not authenticated with backend'
+    sending.value = false
+    return
+  }
+
+  try {
+    const res = await fetch(
+      'https://signiflow-procore-backend-net.onrender.com/api/send',
+      {
+        method: 'POST',
+        headers: { 
+          'bearer-token': authToken.value ?? '' 
+        },
+        body: JSON.stringify({
+          form: form.value,
+          context: props.procoreContext,
+        })
+      }
+    )
+    const data = await res.json()
+    if (!res.ok) {
+      localError.value = 'Failed to send document'
+      throw new Error(`${data.error ?? `HTTP ${res.status}`}`)
+    }
+
+    if (data.token) {
+      authToken.value = data.token
+    }
+
+    sendResult.value = 'Sent successfully'
+  } catch (err: any) {
+    sendResult.value = err.message ?? 'Send failed'
+  } finally {
+    sending.value = false
+  }
+}
 
 onMounted(async () => {
   await handleInit()

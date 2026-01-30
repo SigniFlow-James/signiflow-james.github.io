@@ -81,11 +81,11 @@ onMounted(() => startTimer())
   border-left: 4px solid #ef4444;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
-  font-family: system-ui;
+  
 }
 .error-content { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; }
 .error-icon { flex-shrink: 0; color: #ef4444; margin-top: 0.125rem; }
-.error-text { flex: 1; color: #991b1b; font-size: 0.875rem; line-height: 1.5; font-weight: 500; }
+.error-text { flex: 1; color: #991b1b; font-size: 0.875rem; line-height: 1.5; font-weight: 500; font-family: system-ui;}
 .dismiss-btn { 
   flex-shrink: 0; background: none; border: none; color: #9ca3af; 
   cursor: pointer; display: flex; align-items: center; justify-content: center; 
