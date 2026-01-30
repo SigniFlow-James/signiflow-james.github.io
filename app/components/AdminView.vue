@@ -2,15 +2,16 @@
 // FILE: components/AdminView.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import type { BackendStatus } from '~/scripts/models';
+import { setCookie, getCookie, clearCookie } from '~/scripts/cookie';
 
 const props = defineProps<{
   backendStatus: BackendStatus | null
   error: string | null
 }>()
 
-const authToken = ref<string>('')
+const authToken = ref<string | null>('')
 const isLoggedIn = ref(false)
 const loginForm = ref({
   username: '',
@@ -38,13 +39,14 @@ async function handleLogin() {
 
     if (!res.ok) {
       const data = await res.json()
-      throw new Error(data.error || 'Login failed')
+      throw new Error(data.error || data.message || 'Login failed')
     }
     
-    const token = res.headers.get('token')
-    if (token) {
-      authToken.value = token
+    const data = await res.json()
+    if (data.token) {
+      authToken.value = data.token
     }
+    console.log(data.token)
 
     isLoggedIn.value = true
   } catch (err: any) {
@@ -74,13 +76,14 @@ async function handleTokenLogin() {
     )
 
     if (!res.ok) {
+      clearCookie()
       const data = await res.json()
-      throw new Error(data.error || 'Login failed')
+      throw new Error(data.error || data.message || 'Login failed')
     }
     
-    const token = res.headers.get('token')
-    if (token) {
-      authToken.value = token
+    const data = await res.json()
+    if (data.token) {
+      authToken.value = data.token
     }
 
     isLoggedIn.value = true
@@ -98,8 +101,18 @@ function handleLogout() {
   loginForm.value = { username: '', password: '' }
 }
 
+watch(authToken, (newToken, oldToken) => {
+  if (!newToken || newToken == oldToken) return
+  if (newToken == '') 
+  {
+    clearCookie() 
+    return
+  }
+  setCookie(newToken)
+})
+
 onMounted(async () => {
-  // Try to login with existing token if available
+  authToken.value = getCookie()
   await handleTokenLogin()
 })
 </script>
@@ -138,7 +151,7 @@ onMounted(async () => {
       v-else 
       :backend-status="backendStatus" 
       :error="error" 
-      v-model:auth-token="authToken" 
+      v-model:auth-token="authToken!" 
       @logout="handleLogout" 
     />
   </div>

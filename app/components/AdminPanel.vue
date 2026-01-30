@@ -39,8 +39,7 @@ const canSave = computed(() => {
   return !loading.value && !saving.value
 })
 
-function updateToken(response: Response) {
-  const token = response.headers.get('token')
+function updateToken(token?: string) {
   if (token) {
     emit('update:authToken', token)
   }
@@ -77,10 +76,9 @@ async function getCompanies() {
     if (!res.ok) {
       throw new Error('Failed to fetch companies')
     }
-    
-    updateToken(res)
-
     const data = await res.json()
+    updateToken(data.token)
+
     return (data.companies ?? []).map((c: any) => ({
       ...c,
       id: String(c.id),
@@ -108,10 +106,9 @@ async function getProjects(companyId: string | number) {
     if (!res.ok) {
       throw new Error('Failed to fetch projects')
     }
-    
-    updateToken(res)
-
     const data = await res.json()
+    updateToken(data.token)
+
     return (data.projects ?? []).map(
       (c: any) => ({
         ...c,
@@ -146,10 +143,9 @@ async function getUserInfo(projectId?: string) {
     if (!res.ok) {
       throw new Error('Failed to fetch user info')
     }
-    
-    updateToken(res)
-
     const data = await res.json()
+    updateToken(data.token)
+
     console.log('Fetched user info:', data)
     return data.value || []
   } catch (err: any) {
@@ -178,10 +174,9 @@ async function loadFiltersAndViewers(companyId: string) {
     if (!res.ok) {
       throw new Error('Failed to load dashboard data')
     }
-    
-    updateToken(res)
-
     const data = await res.json()
+    updateToken(data.token)
+
     filters.value = {
       filters: data.filters || []
     }
@@ -260,8 +255,8 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
       const data = await res.json()
       throw new Error(data.error || `Failed to save ${target}`)
     }
-    
-    updateToken(res)
+    const data = await res.json()
+    updateToken(data.token)
 
     saveSuccess.value = true
     setTimeout(() => {
@@ -306,10 +301,9 @@ async function testRecipients() {
       const data = await res.json()
       throw new Error(data.error || 'Failed to fetch recipients')
     }
-    
-    updateToken(res)
-
     const data = await res.json()
+    updateToken(data.token)
+
     testResults.value = data
   } catch (err: any) {
     testError.value = err.message || 'Failed to test recipients'
