@@ -3,10 +3,10 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, computed, watch, onMounted } from 'vue'
-import type { Recipient, BackendStatus } from '~/scripts/models';
+import type { Recipient, BackendStatus, ProcoreContext } from '~/scripts/models';
 
 const props = defineProps<{
-  procoreContext: any
+  procoreContext: ProcoreContext | null
   backendStatus: BackendStatus | null
   error: string | null
 }>()
@@ -50,9 +50,9 @@ async function handleInit() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'company-id': props.procoreContext.company_id,
-          'project-id': props.procoreContext.project_id,
-          'object-id': props.procoreContext.object_id
+          'company-id': props.procoreContext?.company_id.toString() ?? '',
+          'project-id': props.procoreContext?.project_id.toString() ?? '',
+          'object-id': props.procoreContext?.object_id.toString() ?? ''
         },
       }
     )
@@ -98,8 +98,8 @@ async function getRecipients() {
       {
         method: 'GET',
         headers: {
-          'company-id': props.procoreContext.company_id,
-          'project-id': props.procoreContext.project_id,
+          'company-id': props.procoreContext?.company_id.toString() ?? '',
+          'project-id': props.procoreContext?.project_id.toString() ?? '',
           'bearer-token': authToken.value
         }
       }

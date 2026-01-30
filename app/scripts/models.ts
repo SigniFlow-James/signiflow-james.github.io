@@ -8,6 +8,16 @@ export interface OAuthInfo {
   expiresAt?: Date
 }
 
+export interface ProcoreContext {
+  company_id: number,
+  id: number,
+  object_id: number,
+  procore_api_base_url: string,
+  project_id: number,
+  route: string,
+  view: string
+}
+
 export interface BackendStatus {
   procore?: OAuthInfo
   signiflow?: OAuthInfo

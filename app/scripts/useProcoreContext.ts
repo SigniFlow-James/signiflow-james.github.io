@@ -2,14 +2,15 @@
 // FILE: scripts/useProcoreContext.ts
 // ========================================
 import { ref } from 'vue'
+import type { ProcoreContext } from './models'
 
 export function useProcoreContext() {
-  const procoreContext = ref<any>(null)
+  const procoreContext = ref<ProcoreContext | null>(null)
 
   function initializeProcoreListener() {
     if (!document.referrer) {
       // console.warn('No document.referrer; cannot open message listener')
-      procoreContext.value = "App not loaded inside Procore iframe"
+      procoreContext.value = null
       return
     }
 
