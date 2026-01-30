@@ -36,7 +36,7 @@ function updateProjectId(event: Event) {
     
     <div class="form-fields">
       <div class="form-group">
-        <label>Project (leave empty for company-wide filtering)</label>
+        <label>Project</label>
         <select
           :value="modelValue.projectId || ''"
           @change="updateProjectId"

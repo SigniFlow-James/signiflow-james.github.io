@@ -43,8 +43,8 @@ export interface Recipient {
 }
 
 export interface FormData {
-  manager: Recipient | null
-  vendor: Recipient | null
+  generalContractorSigner: Recipient | null
+  subContractorSigner: Recipient | null
   customMessage: string
 }
 

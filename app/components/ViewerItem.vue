@@ -3,7 +3,7 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, onMounted, watch, computed } from 'vue'
-import type { ViewerItem, Project, ProcoreUserRecipient } from '~/scripts/models'
+import type { ViewerItem, Project, ProcoreUserRecipient, Recipient } from '~/scripts/models'
 
 const props = defineProps<{
   viewer: ViewerItem
@@ -35,6 +35,41 @@ const australianRegions = [
 ]
 
 const isManual = computed(() => props.viewer.type === 'manual')
+
+// Convert ProcoreUserRecipient[] to Recipient[] for the dropdown
+const recipientsList = computed<Recipient[]>(() => {
+  return users.value.map(user => ({
+    userId: user.id,
+    firstNames: user.first_name,
+    lastName: user.last_name,
+    email: user.email_address
+  }))
+})
+
+// Convert current recipient to Recipient | null for v-model
+const selectedRecipient = computed<Recipient | null>({
+  get: () => {
+    if (!props.viewer.recipient?.userId) return null
+    return {
+      userId: props.viewer.recipient.userId,
+      firstNames: props.viewer.recipient.firstNames || '',
+      lastName: props.viewer.recipient.lastName || '',
+      email: props.viewer.recipient.email || ''
+    }
+  },
+  set: (recipient: Recipient | null) => {
+    if (recipient) {
+      emit('update', 'recipient', {
+        userId: recipient.userId,
+        firstNames: recipient.firstNames,
+        lastName: recipient.lastName,
+        email: recipient.email
+      })
+    } else {
+      emit('update', 'recipient', { userId: '', firstNames: '', lastName: '', email: '' })
+    }
+  }
+})
 
 onMounted(async () => {
   if (props.companyId) {
@@ -74,25 +109,6 @@ async function loadUsers(projectId?: string) {
 function updateProjectId(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   emit('update', 'projectId', value || null)
-}
-
-function updateUserId(event: Event) {
-  const value = (event.target as HTMLSelectElement).value
-  if (!value) {
-    emit('update', 'recipient', { userId: '', firstNames: '', lastName: '', email: '' })
-    return
-  }
-  
-  // Find the selected user and populate all recipient fields
-  const selectedUser = users.value.find(u => u.id === value)
-  if (selectedUser) {
-    emit('update', 'recipient', {
-      userId: selectedUser.id,
-      firstNames: selectedUser.first_name,
-      lastName: selectedUser.last_name,
-      email: selectedUser.email_address
-    })
-  }
 }
 
 function updateRegion(event: Event) {
@@ -157,19 +173,14 @@ function updateRecipientField(field: 'firstNames' | 'lastName' | 'email', value:
 
         <div class="viewer-field">
           <label>Procore User</label>
-          <select
-            :value="viewer.recipient?.userId || ''"
-            @change="updateUserId"
-            :disabled="loadingUsers"
-            class="input-small"
-          >
-            <option value="">
-              {{ loadingUsers ? 'Loading...' : 'Select a user' }}
-            </option>
-            <option v-for="user in users" :key="user.id" :value="user.id">
-              {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})
-            </option>
-          </select>
+          <div v-if="loadingUsers" class="loading-state">
+            Loading...
+          </div>
+          <RecipientDropdown 
+            v-else
+            v-model="selectedRecipient"
+            :recipients="recipientsList"
+          />
         </div>
       </template>
 
@@ -284,6 +295,16 @@ function updateRecipientField(field: 'firstNames' | 'lastName' | 'email', value:
   margin-bottom: 0.25rem;
   font-size: 0.85rem;
   color: #6c757d;
+}
+
+.loading-state {
+  padding: 0.4rem;
+  color: #6c757d;
+  font-style: italic;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f8f9fa;
+  font-size: 0.85rem;
 }
 
 .input-small {

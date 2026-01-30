@@ -58,7 +58,7 @@ function resetNewViewer() {
   newViewer.value = {
     companyId: null,
     projectId: null,
-    type: 'procore',
+    type: props.companyId ? 'procore' : 'manual', // Auto-select manual if no company
     recipient: {
       userId: '',
       firstNames: '',
@@ -71,8 +71,9 @@ function resetNewViewer() {
 
 function toggleNewViewer() {
   if (!showNewViewer.value) {
-    // Don't set default project anymore since it's optional
     newViewer.value.projectId = null
+    // Set type based on whether company is selected
+    newViewer.value.type = props.companyId ? 'procore' : 'manual'
   }
   showNewViewer.value = !showNewViewer.value
 }
@@ -82,8 +83,9 @@ function toggleNewViewer() {
   <div class="viewer-section">
     <div class="section-header">
       <h3>Contract Viewers</h3>
-      <button @click="toggleNewViewer" :disabled="!companyId" class="btn btn-success btn-small"
-        :title="!companyId ? 'Select a company first' : ''">
+      <button 
+        @click="toggleNewViewer" 
+        class="btn btn-success btn-small">
         {{ showNewViewer ? 'Cancel' : '+ Add Viewer' }}
       </button>
     </div>
@@ -92,14 +94,29 @@ function toggleNewViewer() {
       Add users who will automatically receive viewer access to contracts.
     </div>
 
-    <NewViewerForm v-if="showNewViewer" v-model="newViewer" :company-id="companyId"
-      :default-project-id="defaultProjectId" :projects="projects" :get-user-info="getUserInfo" @add="addViewer" />
+    <NewViewerForm 
+      v-if="showNewViewer" 
+      v-model="newViewer" 
+      :company-id="companyId"
+      :default-project-id="defaultProjectId" 
+      :projects="projects" 
+      :get-user-info="getUserInfo" 
+      @add="addViewer" 
+    />
 
     <div class="section-list">
-      <ViewerItem v-for="(viewer, index) in modelValue" :key="index" :viewer="viewer" :index="index"
-        :company-id="companyId" :default-project-id="defaultProjectId" :projects="projects" :get-user-info="getUserInfo"
+      <ViewerItem 
+        v-for="(viewer, index) in modelValue" 
+        :key="index" 
+        :viewer="viewer" 
+        :index="index"
+        :company-id="companyId" 
+        :default-project-id="defaultProjectId" 
+        :projects="projects" 
+        :get-user-info="getUserInfo"
         @update="(field: keyof ViewerItem, value: any) => updateViewer(index, field, value)"
-        @delete="deleteViewer(index)" />
+        @delete="deleteViewer(index)" 
+      />
 
       <div v-if="modelValue.length === 0" class="empty-state">
         No viewers configured
@@ -131,6 +148,11 @@ function toggleNewViewer() {
   margin-bottom: 1rem;
 }
 
+.warning-text {
+  color: #856404;
+  font-weight: 500;
+}
+
 .btn {
   padding: 0.5rem 1rem;
   border: none;
@@ -158,6 +180,7 @@ function toggleNewViewer() {
   border-radius: 4px;
   max-height: 600px;
   overflow-y: auto;
+  overflow-x: visible;
 }
 
 .empty-state {

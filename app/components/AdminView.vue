@@ -2,8 +2,9 @@
 // FILE: components/AdminView.vue
 ======================================== -->
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import type { BackendStatus } from '~/scripts/models';
+import { getAuthCookie, setAuthCookie } from '~/scripts/cookies';
 
 const props = defineProps<{
   backendStatus: BackendStatus | null
@@ -15,6 +16,7 @@ const loginForm = ref({
   username: '',
   password: ''
 })
+
 const loginError = ref<string | null>(null)
 const loggingIn = ref(false)
 
@@ -27,7 +29,6 @@ async function handleLogin() {
       'https://signiflow-procore-backend-net.onrender.com/admin/login',
       {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginForm.value)
       }
     )
@@ -36,6 +37,39 @@ async function handleLogin() {
       const data = await res.json()
       throw new Error(data.error || 'Login failed')
     }
+    setAuthCookie(res.headers.get('token')) 
+
+    isLoggedIn.value = true
+  } catch (err: any) {
+    loginError.value = err.message || 'Login failed'
+  } finally {
+    loggingIn.value = false
+  }
+}
+
+async function handleTokenLogin() {
+  if (getAuthCookie() == null) {
+      return
+  }
+  loginError.value = null
+  loggingIn.value = true
+
+  try {
+    const res = await fetch(
+      'https://signiflow-procore-backend-net.onrender.com/admin/token',
+      {
+        method: 'POST',
+        headers: { 
+          'bearer-token': getAuthCookie() ?? ''
+        },
+      }
+    )
+
+    if (!res.ok) {
+      const data = await res.json()
+      throw new Error(data.error || 'Login failed')
+    }
+    setAuthCookie(res.headers.get('token')) 
 
     isLoggedIn.value = true
   } catch (err: any) {
@@ -49,12 +83,16 @@ function handleLogout() {
   isLoggedIn.value = false
   loginForm.value = { username: '', password: '' }
 }
+
+onMounted(async () => {
+
+  handleTokenLogin()
+})
+
 </script>
 
 <template>
   <div>
-    <SigniflowHeader />
-
     <div v-if="!isLoggedIn" style="max-width: 400px; margin: 2rem auto;">
       <h2 style="margin-bottom: 1.5rem; text-align: center;">Procore Integration Admin Portal</h2>
 

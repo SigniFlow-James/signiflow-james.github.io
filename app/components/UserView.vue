@@ -15,11 +15,11 @@ const debugEnabled = ref(false)
 const sending = ref(false)
 const sendResult = ref<string | null>(null)
 const localError = ref<string | null>(null)
-const signers = ref<Recipient[]>([])
+const generalContractorSigners = ref<Recipient[]>([])
 
 const form = ref({
-  manager: null,
-  vendor: null,
+  generalContractorSigner: null,
+  subContractorSigner: null,
   customMessage: ''
 })
 
@@ -31,7 +31,7 @@ async function sendToBackend() {
   localError.value = null
   sendResult.value = null
   sending.value = true
-  
+
   if (
     !isAuthenticated.value &&
     (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
@@ -73,7 +73,7 @@ onMounted(() => {
 
 async function getRecipients() {
   localError.value = null
-  
+
   if (
     !isAuthenticated.value &&
     (props.backendStatus?.nextExpiresAt ?? new Date() < new Date())
@@ -84,16 +84,14 @@ async function getRecipients() {
   }
 
   try {
-    const params = new URLSearchParams({
-      company_id: props.procoreContext.company_id,
-      project_id: props.procoreContext.project_id,
-    })
-
-    const res = await fetch(
-      `https://signiflow-procore-backend-net.onrender.com/api/recipients?${params.toString()}`,
+        const res = await fetch(
+      `https://signiflow-procore-backend-net.onrender.com/api/recipients`,
       {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'company-id': props.procoreContext.company_id,
+          'project-id': props.procoreContext.project_id
+        }
       }
     )
     const data = await res.json()
@@ -106,7 +104,7 @@ async function getRecipients() {
       console.error(["Invalid recipients data from backend:", data])
       throw new Error('Invalid recipients data from backend')
     }
-    signers.value = data.signers
+    generalContractorSigners.value = data.signers
   } catch (err: any) {
     localError.value = err.message ?? 'Send failed'
   }
@@ -121,21 +119,14 @@ const displayError = computed(() => props.error || localError.value)
     <h3>Send contract to recipient via Signiflow.</h3>
     <ErrorMessage v-if="displayError" :message="displayError" />
 
-    <SigniflowForm 
-      v-model:form="form" 
-      :procore-context="procoreContext" 
-      :managers="signers"
-      :sending="sending" 
-      :send-result="sendResult"
-      @submit="sendToBackend" 
-    />
-
-    <DebugPanel 
-      v-model:enabled="debugEnabled" 
-      :backend-status="backendStatus" 
-      :procore-context="procoreContext"
-      :error="displayError" 
-    />
+    <SigniflowForm v-model:form="form" :procoreContext="procoreContext"
+      :generalContractorSigners="generalContractorSigners" :sending="sending" :send-result="sendResult"
+      @submit="sendToBackend" />
+      
+    <div hidden="true">
+      <DebugPanel v-model:enabled="debugEnabled" :backendStatus="backendStatus" :procoreContext="procoreContext"
+        :error="displayError" />
+    </div>
   </div>
 </template>
 

@@ -4,6 +4,7 @@
 <script setup lang="ts">
 import { ref, onMounted, computed, watch } from 'vue'
 import type { FilterData, ViewerData, Company, Project, BackendStatus } from '~/scripts/models'
+import { getAuthCookie, setAuthCookie } from '~/scripts/cookies';
 
 const props = defineProps<{
   backendStatus: BackendStatus | null
@@ -13,6 +14,8 @@ const props = defineProps<{
 const emit = defineEmits<{
   logout: []
 }>()
+
+
 
 const companies = ref<Company[]>([])
 const projects = ref<Project[]>([])
@@ -28,6 +31,7 @@ const loading = ref(false)
 const saving = ref(false)
 const pageError = ref<string | null>(null)
 const saveSuccess = ref(false)
+const authSuccess = ref(false)
 const testingRecipients = ref(false)
 const testResults = ref<any>(null)
 const testError = ref<string | null>(null)
@@ -55,15 +59,21 @@ watch(() => selectedCompany.value, async (newCompany) => {
 async function getCompanies() {
   try {
     const res = await fetch(
-      'https://signiflow-procore-backend-net.onrender.com/admin/companies'
+      'https://signiflow-procore-backend-net.onrender.com/admin/companies',
+      {
+        method: 'GET',
+        headers: {
+          'bearer-token': getAuthCookie() ?? ''
+        },
+      }
     )
 
     if (!res.ok) {
       throw new Error('Failed to fetch companies')
     }
+    setAuthCookie(res.headers.get('token'))
 
     const data = await res.json()
-
     return (data.companies ?? []).map((c: any) => ({
       ...c,
       id: String(c.id),
@@ -83,7 +93,8 @@ async function getProjects(companyId: string) {
       {
         method: 'GET',
         headers: {
-          'company-id': companyId
+          'company-id': companyId,
+          'bearer-token': getAuthCookie() ?? ''
         },
       }
     )
@@ -91,6 +102,7 @@ async function getProjects(companyId: string) {
     if (!res.ok) {
       throw new Error('Failed to fetch projects')
     }
+    setAuthCookie(res.headers.get('token')) 
 
     const data = await res.json()
     return (data.projects ?? []).map(
@@ -120,7 +132,8 @@ async function getUserInfo(projectId?: string) {
         method: 'GET',
         headers: {
           'company-id': selectedCompany.value.id,
-          'project-id': projectId ?? ''
+          'project-id': projectId ?? '',
+          'bearer-token': getAuthCookie() ?? ''
         },
       }
     )
@@ -128,6 +141,7 @@ async function getUserInfo(projectId?: string) {
     if (!res.ok) {
       throw new Error('Failed to fetch user info')
     }
+    setAuthCookie(res.headers.get('token')) 
 
     const data = await res.json()
     console.log('Fetched user info:', data)
@@ -148,13 +162,17 @@ async function loadFiltersAndViewers(companyId: string) {
       'https://signiflow-procore-backend-net.onrender.com/admin/dashboard',
       {
         method: 'GET',
-        headers: { 'company-id': companyId },
+        headers: {
+          'company-id': companyId,
+          'bearer-token': getAuthCookie() ?? ''
+        },
       }
     )
 
     if (!res.ok) {
       throw new Error('Failed to load dashboard data')
     }
+    setAuthCookie(res.headers.get('token')) 
 
     const data = await res.json()
     filters.value = {
@@ -181,6 +199,19 @@ async function linkAuth() {
   }
 }
 
+async function handleOAuthComplete() {
+  console.log('OAuth completed - refreshing data...')
+  pageError.value = null
+
+  // Refresh companies list and reload dashboard data
+  companies.value = await getCompanies()
+  await loadFiltersAndViewers(selectedCompany.value?.id ?? 'all')
+
+  // Show success message
+  authSuccess.value = true
+  setTimeout(() => { authSuccess.value = false }, 3000)
+}
+
 async function saveDashboardData(target: 'filters' | 'viewers') {
   let companyId = selectedCompany.value?.id ?? 'all'
 
@@ -193,17 +224,17 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
     const payload =
       target === 'filters'
         ? {
-            filters: filters.value.filters.map(f => ({
-              ...f,
-              companyId,
-            })),
-          }
+          filters: filters.value.filters.map(f => ({
+            ...f,
+            companyId,
+          })),
+        }
         : {
-            viewers: viewers.value.viewers.map(v => ({
-              ...v,
-              companyId,
-            })),
-          }
+          viewers: viewers.value.viewers.map(v => ({
+            ...v,
+            companyId,
+          })),
+        }
 
     const res = await fetch(
       `https://signiflow-procore-backend-net.onrender.com/admin/${target}`,
@@ -211,6 +242,7 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
         method: 'POST',
         headers: {
           'company-id': companyId,
+          'bearer-token': getAuthCookie() ?? ''
         },
         body: JSON.stringify(payload),
       }
@@ -220,6 +252,7 @@ async function saveDashboardData(target: 'filters' | 'viewers') {
       const data = await res.json()
       throw new Error(data.error || `Failed to save ${target}`)
     }
+    setAuthCookie(res.headers.get('token')) 
 
     saveSuccess.value = true
     setTimeout(() => {
@@ -254,7 +287,8 @@ async function testRecipients() {
         method: 'GET',
         headers: {
           'company-id': selectedCompany.value.id,
-          'project-id': selectedProject.value.id
+          'project-id': selectedProject.value.id,
+          'bearer-token': getAuthCookie() ?? ''
         }
       }
     )
@@ -263,6 +297,7 @@ async function testRecipients() {
       const data = await res.json()
       throw new Error(data.error || 'Failed to fetch recipients')
     }
+    setAuthCookie(res.headers.get('token')) 
 
     const data = await res.json()
     testResults.value = data
@@ -283,17 +318,23 @@ function closeTestResults() {
   <div class="admin-panel">
     <AdminHeader :companies="companies" :projects="projects" v-model:company="selectedCompany"
       v-model:project="selectedProject" :loading="loading" :testing-recipients="testingRecipients" @link-auth="linkAuth"
-      @test-recipients="testRecipients" @logout="emit('logout')" />
+      @oauth-complete="handleOAuthComplete" @test-recipients="testRecipients" @logout="emit('logout')" />
 
-    <ErrorMessage v-if="pageError" :message="pageError" />
+    <Transition name="notice">
+      <ErrorMessage v-if="pageError" :message="pageError" />
+    </Transition>
 
-    <div v-if="saveSuccess" class="success-message">
-      Configuration saved successfully!
-    </div>
+    <Transition name="notice" appear>
+      <div v-if="saveSuccess" class="success-message">
+        Configuration saved successfully!
+      </div>
+    </Transition>
 
-    <!-- <div v-if="!selectedCompany" class="warning-message">
-      Please select a company to configure filters and viewers
-    </div> -->
+    <Transition name="notice" appear>
+      <div v-if="authSuccess" class="success-message">
+        Authentication completed successfully!
+      </div>
+    </Transition>
 
     <div v-if="loading && !testingRecipients" class="loading-message">
       Loading configuration...
@@ -310,7 +351,8 @@ function closeTestResults() {
     <div class="save-section">
       <button @click="saveAll" :disabled="!canSave" class="btn btn-primary btn-large"
         :title="!selectedCompany ? 'Select a company first' : ''">
-        {{ saving ? 'Saving...' : loading ? 'Loading...' : `Save Configuration for ${selectedCompany?.name ?? 'Company'}` }}
+        {{ saving ? 'Saving...' : loading ? 'Loading...' : `Save Configuration for ${selectedCompany?.name ??
+          'All Companies'}` }}
       </button>
     </div>
 
@@ -349,6 +391,66 @@ function closeTestResults() {
   font-size: 1rem;
 }
 
+.success-message,
+.warning-message {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 1rem 2rem;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 300px;
+  text-align: center;
+}
+
+.success-message {
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
+}
+
+.warning-message {
+  background: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeaa7;
+}
+
+.notice-enter-active,
+.notice-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.notice-enter-from,
+.notice-leave-to {
+  opacity: 0;
+  transform: translate(-50%, -20px);
+}
+
+.notice-enter-to,
+.notice-leave-from {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+/* .notice-enter-active,
+.notice-leave-active {
+  transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.notice-enter-from,
+.notice-leave-to {
+  opacity: 0;
+  transform: translateY(-8px);
+}
+
+.notice-enter-to,
+.notice-leave-from {
+  opacity: 1;
+  transform: translateY(0);
+}
+
 .success-message {
   padding: 1rem;
   background: #d4edda;
@@ -366,7 +468,7 @@ function closeTestResults() {
   border-radius: 4px;
   margin-bottom: 1rem;
   text-align: center;
-}
+} */
 
 .loading-message {
   text-align: center;

@@ -3,7 +3,7 @@
 ======================================== -->
 <script setup lang="ts">
 import { ref, watch, computed, onMounted } from 'vue'
-import type { ViewerItem, Project, ProcoreUserRecipient } from '~/scripts/models'
+import type { ViewerItem, Project, ProcoreUserRecipient, Recipient } from '~/scripts/models'
 
 const props = defineProps<{
   modelValue: ViewerItem
@@ -34,6 +34,7 @@ const australianRegions = [
 ]
 
 const isManual = computed(() => props.modelValue.type === 'manual')
+
 const isValid = computed(() => {
   if (isManual.value) {
     return !!(
@@ -46,7 +47,47 @@ const isValid = computed(() => {
   }
 })
 
+// Convert ProcoreUserRecipient[] to Recipient[] for the dropdown
+const recipientsList = computed<Recipient[]>(() => {
+  return users.value.map(user => ({
+    userId: user.id,
+    firstNames: user.first_name,
+    lastName: user.last_name,
+    email: user.email_address
+  }))
+})
+
+// Convert current recipient to Recipient | null for v-model
+const selectedRecipient = computed<Recipient | null>({
+  get: () => {
+    if (!props.modelValue.recipient?.userId) return null
+    return {
+      userId: props.modelValue.recipient.userId,
+      firstNames: props.modelValue.recipient.firstNames || '',
+      lastName: props.modelValue.recipient.lastName || '',
+      email: props.modelValue.recipient.email || ''
+    }
+  },
+  set: (recipient: Recipient | null) => {
+    if (recipient) {
+      updateField('recipient', {
+        userId: recipient.userId,
+        firstNames: recipient.firstNames,
+        lastName: recipient.lastName,
+        email: recipient.email
+      })
+    } else {
+      updateField('recipient', { userId: '', firstNames: '', lastName: '', email: '' })
+    }
+  }
+})
+
 onMounted(async () => {
+  // If no company ID, force manual type
+  if (!props.companyId && props.modelValue.type === 'procore') {
+    updateField('type', 'manual')
+  }
+  
   if (props.companyId) {
     await loadUsers()
   }
@@ -86,26 +127,6 @@ function updateProjectId(event: Event) {
   updateField('projectId', value || null)
 }
 
-function updateUserId(event: Event) {
-  const value = (event.target as HTMLSelectElement).value
-  console.log('Selected user ID:', value)
-  if (!value) {
-    updateField('recipient', { userId: '', firstNames: '', lastName: '', email: '' })
-    return
-  }
-  
-  // Find the selected user and populate all recipient fields
-  const selectedUser = users.value.find(u => u.id === value)
-  if (selectedUser) {
-    updateField('recipient', {
-      userId: selectedUser.id,
-      firstNames: selectedUser.first_name,
-      lastName: selectedUser.last_name,
-      email: selectedUser.email_address
-    })
-  }
-}
-
 function updateRegion(event: Event) {
   const value = (event.target as HTMLSelectElement).value
   updateField('region', value || null)
@@ -120,10 +141,15 @@ function updateRegion(event: Event) {
       <div class="form-group">
         <label>Viewer Type</label>
         <div class="radio-group">
-          <label class="radio-label">
+          <label 
+            class="radio-label" 
+            :class="{ 'radio-disabled': companyId === null }"
+            :title="companyId === null ? 'Select a company to add Procore users' : ''"
+          >
             <input
               type="radio"
               :checked="modelValue.type === 'procore'"
+              :disabled="companyId === null"
               @change="updateField('type', 'procore')"
             />
             <span>Procore User</span>
@@ -136,6 +162,9 @@ function updateRegion(event: Event) {
             />
             <span>Manual Entry</span>
           </label>
+        </div>
+        <div v-if="companyId === null" class="helper-text">
+          Select a company to add Procore users
         </div>
       </div>
 
@@ -171,19 +200,14 @@ function updateRegion(event: Event) {
 
       <div v-if="!isManual" class="form-group">
         <label>Procore User</label>
-        <select
-          :value="modelValue.recipient?.userId || ''"
-          @change="updateUserId"
-          :disabled="loadingUsers"
-          class="form-input"
-        >
-          <option value="">
-            {{ loadingUsers ? 'Loading users...' : 'Select a user'}}
-          </option>
-          <option v-for="user in users" :key="user.id" :value="user.id">
-            {{ user.first_name }} {{ user.last_name }} ({{ user.email_address }})
-          </option>
-        </select>
+        <div v-if="loadingUsers" class="loading-state">
+          Loading users...
+        </div>
+        <RecipientDropdown 
+          v-else
+          v-model="selectedRecipient"
+          :recipients="recipientsList"
+        />
       </div>
 
       <template v-if="isManual">
@@ -275,6 +299,22 @@ function updateRegion(event: Event) {
   font-weight: 500;
 }
 
+.loading-state {
+  padding: 0.5rem;
+  color: #6c757d;
+  font-style: italic;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background: #f8f9fa;
+}
+
+.helper-text {
+  margin-top: 0.25rem;
+  font-size: 0.85rem;
+  color: #856404;
+  font-style: italic;
+}
+
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -295,8 +335,17 @@ function updateRegion(event: Event) {
   font-weight: normal;
 }
 
+.radio-label.radio-disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .radio-label input[type="radio"] {
   margin: 0;
+}
+
+.radio-label input[type="radio"]:disabled {
+  cursor: not-allowed;
 }
 
 .form-input {

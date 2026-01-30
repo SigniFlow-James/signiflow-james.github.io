@@ -1,9 +1,9 @@
 <!-- ========================================
-// FILE: components/ManagersDropdown.vue
+// FILE: components/RecipientDropdown.vue
 ======================================== -->
 <script setup lang="ts">
 import type { Recipient } from '~/scripts/models'
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, onUnmounted } from 'vue'
 
 const props = defineProps<{
   modelValue: Recipient | null
@@ -16,6 +16,8 @@ const emit = defineEmits<{
 
 const searchQuery = ref('');
 const isOpen = ref(false);
+const inputRef = ref<HTMLInputElement | null>(null);
+const dropdownStyle = ref({});
 
 // Computed getter/setter for v-model
 const selected = computed<Recipient | null>({
@@ -49,8 +51,30 @@ function selectRecipient(recipient: Recipient) {
   isOpen.value = false;
 }
 
+function updateDropdownPosition() {
+  if (!inputRef.value || !isOpen.value) return;
+  
+  const rect = inputRef.value.getBoundingClientRect();
+  const viewportHeight = window.innerHeight;
+  const dropdownHeight = 200; // max-height of dropdown
+  
+  // Check if there's enough space below
+  const spaceBelow = viewportHeight - rect.bottom;
+  const shouldOpenUpward = spaceBelow < dropdownHeight && rect.top > dropdownHeight;
+  
+  dropdownStyle.value = {
+    position: 'fixed',
+    left: `${rect.left}px`,
+    width: `${rect.width}px`,
+    top: shouldOpenUpward ? 'auto' : `${rect.bottom}px`,
+    bottom: shouldOpenUpward ? `${viewportHeight - rect.top}px` : 'auto',
+    zIndex: 9999
+  };
+}
+
 function handleFocus() {
   isOpen.value = true;
+  updateDropdownPosition();
 }
 
 function handleBlur() {
@@ -60,32 +84,52 @@ function handleBlur() {
     searchQuery.value = '';
   }, 200);
 }
+
+function handleScroll() {
+  if (isOpen.value) {
+    updateDropdownPosition();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener('scroll', handleScroll, true);
+  window.addEventListener('resize', updateDropdownPosition);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('scroll', handleScroll, true);
+  window.removeEventListener('resize', updateDropdownPosition);
+});
 </script>
 
 <template>
   <div class="dropdown-container">
     <input
+      ref="inputRef"
       v-model="searchQuery"
       type="text"
       class="search-input"
+      :class="{ 'has-selection': !!selected }"
       :placeholder="selected ? displayName(selected) : 'Type to search people'"
       @focus="handleFocus"
       @blur="handleBlur"
     />
     
-    <div v-if="isOpen" class="dropdown-list">
-      <div
-        v-for="recipient in filteredRecipients"
-        :key="recipient.email"
-        class="dropdown-item"
-        @mousedown="selectRecipient(recipient)"
-      >
-        {{ displayName(recipient) }}
+    <Teleport to="body">
+      <div v-if="isOpen" class="dropdown-list" :style="dropdownStyle">
+        <div
+          v-for="recipient in filteredRecipients"
+          :key="recipient.email"
+          class="dropdown-item"
+          @mousedown="selectRecipient(recipient)"
+        >
+          {{ displayName(recipient) }}
+        </div>
+        <div v-if="filteredRecipients.length === 0" class="dropdown-item no-results">
+          No matches found
+        </div>
       </div>
-      <div v-if="filteredRecipients.length === 0" class="dropdown-item no-results">
-        No matches found
-      </div>
-    </div>
+    </Teleport>
   </div>
 </template>
 
@@ -104,31 +148,36 @@ function handleBlur() {
   box-sizing: border-box;
 }
 
+.search-input::placeholder {
+  color: #ccc;
+}
+
+/* When a recipient is selected */
+.search-input.has-selection::placeholder {
+  color: #111827; /* black */
+  opacity: 1;
+}
+
+
 .search-input:focus {
   outline: none;
   border-color: #4a90e2;
 }
 
 .dropdown-list {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
   max-height: 200px;
   overflow-y: auto;
   background: white;
   border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 6px 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  z-index: 1000;
-  margin-top: -1px;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .dropdown-item {
   padding: 8px 12px;
   cursor: pointer;
   font-size: 14px;
+  font-family: system-ui;
 }
 
 .dropdown-item:hover {
@@ -146,5 +195,5 @@ function handleBlur() {
 </style>
 
 <!-- ========================================
-// END FILE: components/ManagersDropdown.vue
+// END FILE: components/RecipientDropdown.vue
 ======================================== -->

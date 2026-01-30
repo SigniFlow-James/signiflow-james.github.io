@@ -85,7 +85,6 @@ function toggleNewFilter() {
       <h3>{{ title }}</h3>
       <button
         @click="toggleNewFilter"
-        :disabled="!companyId"
         class="btn btn-success btn-small"
         :title="!companyId ? 'Select a company first' : ''"
       >

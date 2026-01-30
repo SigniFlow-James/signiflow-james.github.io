@@ -9,7 +9,7 @@ const props = defineProps<{
   procoreContext: any
   sending: boolean
   sendResult: string | null
-  managers: Recipient[]
+  generalContractorSigners: Recipient[]
 }>()
 
 const emit = defineEmits<{
@@ -24,8 +24,8 @@ const formModel = computed({
 
 const isDisabled = computed(() =>
   !props.procoreContext ||
-  !props.form.manager ||
-  !props.form.vendor ||
+  !props.form.generalContractorSigner ||
+  !props.form.subContractorSigner ||
   props.sending
 )
 </script>
@@ -33,13 +33,13 @@ const isDisabled = computed(() =>
 <template>
   <section style="margin-top: 1rem;">
     <label>
-      Manager<br />
-      <ManagersDropdown v-model="formModel.manager" :recipients="props.managers" />
+      General Contractor Signer<br />
+      <RecipientDropdown v-model="formModel.generalContractorSigner" :recipients="props.generalContractorSigners" />
     </label>
     
     <label>
-      Vendor<br />
-      <ManagersDropdown v-model="formModel.vendor" :recipients="props.managers" />
+      Sub Contractor Signer<br />
+      
     </label>
 
     <label style="display: block; margin-top: 1rem;">

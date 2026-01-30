@@ -12,6 +12,10 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: []
 }>()
+
+onMounted(() => {
+  console.log(props.results)
+})
 </script>
 
 <template>
@@ -30,10 +34,10 @@ const emit = defineEmits<{
 
       <div v-else-if="results">
         <ResultsTable title="Users" :items="results" :columns="[
-          { key: 'employee_id', label: 'Employee ID' },
-          { key: 'name', label: 'Name', computed: (u) => `${u.first_name} ${u.last_name}` },
-          { key: 'job_title', label: 'Job Title' },
-          { key: 'email_address', label: 'Email' }
+          { key: 'userId', label: 'Procore ID' },
+          {key: 'jobTitle', label: 'Job Title' },
+          { key: 'name', label: 'Name', computed: (u) => `${u.firstNames} ${u.lastName}` },
+          { key: 'email', label: 'Email' }
         ]" />
       </div>
     </div>
