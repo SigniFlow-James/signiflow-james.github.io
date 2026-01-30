@@ -6,7 +6,7 @@ import { AlertCircle, X } from 'lucide-vue-next'
 const props = defineProps<{ 
   message: string 
   duration?: number 
-  dismissible?: boolean 
+  persistent?: boolean
 }>()
 
 const emit = defineEmits<{ dismiss: [] }>()
@@ -54,7 +54,7 @@ onMounted(() => startTimer())
           <div class="error-text">{{ message }}</div>
           
           <button 
-            v-if="dismissible !== false" 
+            v-if="persistent == false" 
             @click="dismiss" 
             class="dismiss-btn" 
             aria-label="Dismiss"
@@ -81,6 +81,7 @@ onMounted(() => startTimer())
   border-left: 4px solid #ef4444;
   border-radius: 8px;
   box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+  font-family: system-ui;
 }
 .error-content { display: flex; align-items: flex-start; gap: 0.75rem; padding: 1rem; }
 .error-icon { flex-shrink: 0; color: #ef4444; margin-top: 0.125rem; }
